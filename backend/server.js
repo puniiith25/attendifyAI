@@ -13,7 +13,7 @@ import studentRoutes from "./Routes/studentRouter.js";
 import classroomRoutes from "./Routes/classRoomRouter.js";
 import timetableRoutes from "./Routes/timeTableRouter.js";
 import subjectRoutes from "./Routes/subjectRouter.js";
-import attendanceRoutes from "./Routes/attendenceRouter.js";
+import attendanceRoutes from "./Routes/sessionRouter.js";
 
 dotenv.config();
 

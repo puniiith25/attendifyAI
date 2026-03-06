@@ -1,17 +1,24 @@
 import express from "express";
-import { verifyToken } from "../Midddlewares/verifyToken.js";
-import { createClassroom, deleteClassroom, getAllClassrooms, updateClassroom } from "../Controllers/classRoomController.js";
+import { verifyToken, authorizeRole } from "../Midddlewares/verifyToken.js";
 
+import {
+    createClassroom,
+    getAllClassrooms,
+    getClassroomById,
+    updateClassroom,
+    deleteClassroom
+} from "../Controllers/classRoomController.js";
 
+const classroomRouter = express.Router();
 
-const ClassRoomRouter = express.Router();
+classroomRouter.post("/create-classroom", verifyToken, authorizeRole("admin"), createClassroom);
 
-ClassRoomRouter.post("/createClassroom", verifyToken, createClassroom);
+classroomRouter.get("/get-classrooms", verifyToken, getAllClassrooms);
 
-ClassRoomRouter.get("/getAllClassrooms", verifyToken, getAllClassrooms);
+classroomRouter.get("/get-classroom/:id", verifyToken, getClassroomById);
 
-ClassRoomRouter.put("/updateClassroom/:id", verifyToken, updateClassroom);
+classroomRouter.put("/update-classroom/:id", verifyToken, authorizeRole("admin"), updateClassroom);
 
-ClassRoomRouter.delete("/deleteClassroom/:id", verifyToken, deleteClassroom);
+classroomRouter.delete("/delete-classroom/:id", verifyToken, authorizeRole("admin"), deleteClassroom);
 
-export default ClassRoomRouter;
+export default classroomRouter;

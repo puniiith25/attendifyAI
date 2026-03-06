@@ -4,76 +4,220 @@ export const createClassroom = async (req, res) => {
     try {
 
         if (req.user.role !== "admin") {
-            return res.status(403).json({ message: "Only admin can create classroom" });
+            return res.status(403).json({
+                success: false,
+                message: "Only admin can create classroom"
+            });
         }
 
         const { room_number, building, capacity } = req.body;
 
+        if (!room_number || !building || !capacity) {
+            return res.status(400).json({
+                success: false,
+                message: "All fields are required"
+            });
+        }
+
+        const duplicate = await pool.query(
+            "SELECT id FROM classrooms WHERE room_number=$1",
+            [room_number]
+        );
+
+        if (duplicate.rowCount > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Room number already exists"
+            });
+        }
+
         const result = await pool.query(
-            `INSERT INTO classrooms (room_number,building,capacity)
-       VALUES ($1,$2,$3)
-       RETURNING *`,
+            `INSERT INTO classrooms (room_number, building, capacity)
+             VALUES ($1,$2,$3)
+             RETURNING *`,
             [room_number, building, capacity]
         );
 
-        res.json({
-            message: "Classroom created",
-            data: result.rows[0]
+        res.status(201).json({
+            success: true,
+            classroom: result.rows[0]
         });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+
     }
 };
+
 
 export const getAllClassrooms = async (req, res) => {
     try {
 
         const result = await pool.query(
-            `SELECT * FROM classrooms ORDER BY room_number`
+            "SELECT * FROM classrooms ORDER BY room_number"
         );
 
-        res.json(result.rows);
+        res.json({
+            success: true,
+            count: result.rowCount,
+            classrooms: result.rows
+        });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+
     }
 };
+
+
+export const getClassroomById = async (req, res) => {
+    try {
+
+        const { id } = req.params;
+
+        const result = await pool.query(
+            "SELECT * FROM classrooms WHERE id=$1",
+            [id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Classroom not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            classroom: result.rows[0]
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+
+    }
+};
+
 
 export const updateClassroom = async (req, res) => {
     try {
 
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Only admin can update classroom"
+            });
+        }
+
         const { id } = req.params;
         const { room_number, building, capacity } = req.body;
 
-        const result = await pool.query(
-            `UPDATE classrooms
-       SET room_number=$1, building=$2, capacity=$3
-       WHERE id=$4
-       RETURNING *`,
-            [room_number, building, capacity, id]
+        const classroom = await pool.query(
+            "SELECT * FROM classrooms WHERE id=$1",
+            [id]
         );
 
-        res.json(result.rows[0]);
+        if (classroom.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Classroom not found"
+            });
+        }
+
+        if (room_number) {
+
+            const duplicate = await pool.query(
+                "SELECT id FROM classrooms WHERE room_number=$1 AND id<>$2",
+                [room_number, id]
+            );
+
+            if (duplicate.rowCount > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Room number already exists"
+                });
+            }
+        }
+
+        const result = await pool.query(
+            `UPDATE classrooms
+             SET room_number=$1,
+                 building=$2,
+                 capacity=$3
+             WHERE id=$4
+             RETURNING *`,
+            [
+                room_number || classroom.rows[0].room_number,
+                building || classroom.rows[0].building,
+                capacity || classroom.rows[0].capacity,
+                id
+            ]
+        );
+
+        res.json({
+            success: true,
+            message: "Classroom updated successfully",
+            classroom: result.rows[0]
+        });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+
     }
 };
+
 
 export const deleteClassroom = async (req, res) => {
     try {
 
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Only admin can delete classroom"
+            });
+        }
+
         const { id } = req.params;
 
-        await pool.query(
-            `DELETE FROM classrooms WHERE id=$1`,
+        const result = await pool.query(
+            "DELETE FROM classrooms WHERE id=$1 RETURNING id",
             [id]
         );
 
-        res.json({ message: "Classroom deleted" });
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Classroom not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Classroom deleted successfully"
+        });
 
     } catch (error) {
-        res.status(500).json({ error: error.message });
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+
     }
 };

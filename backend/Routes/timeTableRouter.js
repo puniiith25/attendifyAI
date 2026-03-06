@@ -1,23 +1,27 @@
 import express from "express";
+import { verifyToken, authorizeRole } from "../Midddlewares/verifyToken.js";
 
 import {
     createTimetable,
     getAllTimetables,
     getTeacherTimetable,
-    getStudentTimetable
+    getStudentTimetable,
+    updateTimetable,
+    deleteTimetable
 } from "../Controllers/timeTableController.js";
-import { verifyToken } from "../Midddlewares/verifyToken.js";
-
-
 
 const timetableRouter = express.Router();
 
-timetableRouter.post("/createTimetable", verifyToken, createTimetable);
+timetableRouter.post("/create-timetable", verifyToken, authorizeRole("admin"), createTimetable);
 
-timetableRouter.get("/getAllTimetables", verifyToken, getAllTimetables);
+timetableRouter.get("/get-timetables", verifyToken, getAllTimetables);
 
-timetableRouter.get("/getTeacherTimetable", verifyToken, getTeacherTimetable);
+timetableRouter.get("/teacher-timetable", verifyToken, authorizeRole("teacher"), getTeacherTimetable);
 
-timetableRouter.get("/getStudentTimetable", verifyToken, getStudentTimetable);
+timetableRouter.get("/student-timetable", verifyToken, authorizeRole("student"), getStudentTimetable);
+
+timetableRouter.put("/update-timetable/:id", verifyToken, authorizeRole("admin"), updateTimetable);
+
+timetableRouter.delete("/delete-timetable/:id", verifyToken, authorizeRole("admin"), deleteTimetable);
 
 export default timetableRouter;

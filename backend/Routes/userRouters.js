@@ -13,19 +13,17 @@ import { verifyToken } from "../Midddlewares/verifyToken.js";
 
 const userRouter = express.Router();
 
-// AUTH ROUTES
+// AUTH
 
 userRouter.post("/login", userLogin);
 userRouter.post("/logout", verifyToken, logoutUser);
 
+// USER MANAGEMENT
 
-// USER MANAGEMENT (ADMIN)
-
-userRouter.post("/users", verifyToken, userRegister);   // create user
-userRouter.get("/users", verifyToken, getAllUsers);     // list users
-userRouter.get("/users/:id", verifyToken, getUserById); // single user
-userRouter.put("/users/:id", verifyToken, updateUser);  // update user
-userRouter.delete("/users/:id", verifyToken, deleteUser); // delete user
-
+userRouter.post("/create-user", verifyToken, userRegister);
+userRouter.get("/get-users", verifyToken, getAllUsers);
+userRouter.get("/get-user/:id", verifyToken, getUserById);
+userRouter.put("/update-user/:id", verifyToken, updateUser);
+userRouter.delete("/delete-user/:id", verifyToken, deleteUser);
 
 export default userRouter;

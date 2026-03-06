@@ -1,18 +1,24 @@
 import { pool } from "../Database/db.js";
 
 export const createStudent = async (req, res) => {
-
-    const {
-        user_id,
-        roll_number,
-        section_id,
-        department,
-        semester,
-        phone,
-        admission_year
-    } = req.body;
-
     try {
+
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Only admin can create student"
+            });
+        }
+
+        const {
+            user_id,
+            roll_number,
+            section_id,
+            department,
+            semester,
+            phone,
+            admission_year
+        } = req.body;
 
         if (!user_id || !roll_number || !section_id || !department || !semester || !phone || !admission_year) {
             return res.status(400).json({
@@ -36,14 +42,39 @@ export const createStudent = async (req, res) => {
         if (user.rows[0].role !== "student") {
             return res.status(400).json({
                 success: false,
-                message: "User is not a student"
+                message: "User role must be student"
             });
         }
 
-        await pool.query(
+        const section = await pool.query(
+            "SELECT id FROM sections WHERE id=$1",
+            [section_id]
+        );
+
+        if (section.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Section not found"
+            });
+        }
+
+        const duplicate = await pool.query(
+            "SELECT id FROM students WHERE roll_number=$1",
+            [roll_number]
+        );
+
+        if (duplicate.rowCount > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Roll number already exists"
+            });
+        }
+
+        const result = await pool.query(
             `INSERT INTO students
             (user_id, roll_number, section_id, department, semester, phone, admission_year)
-            VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+            VALUES ($1,$2,$3,$4,$5,$6,$7)
+            RETURNING *`,
             [
                 user_id,
                 roll_number,
@@ -57,14 +88,15 @@ export const createStudent = async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: "Student Data Inserted Successfully"
+            message: "Student created successfully",
+            student: result.rows[0]
         });
 
     } catch (error) {
 
         res.status(500).json({
             success: false,
-            message: error.message
+            message: "Internal server error"
         });
 
     }
@@ -72,8 +104,14 @@ export const createStudent = async (req, res) => {
 
 
 export const getStudents = async (req, res) => {
-
     try {
+
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Only admin can view students"
+            });
+        }
 
         const result = await pool.query(
             `SELECT 
@@ -92,7 +130,7 @@ export const getStudents = async (req, res) => {
             ORDER BY s.id ASC`
         );
 
-        res.status(200).json({
+        res.json({
             success: true,
             count: result.rowCount,
             students: result.rows
@@ -102,7 +140,60 @@ export const getStudents = async (req, res) => {
 
         res.status(500).json({
             success: false,
-            message: error.message
+            message: "Internal server error"
+        });
+
+    }
+};
+
+
+export const getStudentById = async (req, res) => {
+    try {
+
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Only admin can view student"
+            });
+        }
+
+        const { id } = req.params;
+
+        const result = await pool.query(
+            `SELECT 
+                s.id,
+                s.roll_number,
+                s.department,
+                s.semester,
+                s.phone,
+                s.admission_year,
+                sec.sec_name AS section,
+                u.name,
+                u.email
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            JOIN sections sec ON s.section_id = sec.id
+            WHERE s.id=$1`,
+            [id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Student not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            student: result.rows[0]
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
         });
 
     }
@@ -110,10 +201,14 @@ export const getStudents = async (req, res) => {
 
 
 export const getLoggedStudent = async (req, res) => {
-
     try {
 
-        const user_id = req.user.id;
+        if (req.user.role !== "student") {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied"
+            });
+        }
 
         const result = await pool.query(
             `SELECT 
@@ -130,8 +225,8 @@ export const getLoggedStudent = async (req, res) => {
             FROM students s
             JOIN users u ON s.user_id = u.id
             JOIN sections sec ON s.section_id = sec.id
-            WHERE s.user_id = $1`,
-            [user_id]
+            WHERE s.user_id=$1`,
+            [req.user.id]
         );
 
         if (result.rowCount === 0) {
@@ -141,7 +236,7 @@ export const getLoggedStudent = async (req, res) => {
             });
         }
 
-        res.status(200).json({
+        res.json({
             success: true,
             student: result.rows[0]
         });
@@ -150,9 +245,134 @@ export const getLoggedStudent = async (req, res) => {
 
         res.status(500).json({
             success: false,
-            message: error.message
+            message: "Internal server error"
         });
 
     }
+};
 
+
+export const updateStudent = async (req, res) => {
+    try {
+
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Only admin can update student"
+            });
+        }
+
+        const { id } = req.params;
+
+        const {
+            roll_number,
+            section_id,
+            department,
+            semester,
+            phone,
+            admission_year
+        } = req.body;
+
+        const student = await pool.query(
+            "SELECT * FROM students WHERE id=$1",
+            [id]
+        );
+
+        if (student.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Student not found"
+            });
+        }
+
+        if (roll_number) {
+
+            const duplicate = await pool.query(
+                "SELECT id FROM students WHERE roll_number=$1 AND id<>$2",
+                [roll_number, id]
+            );
+
+            if (duplicate.rowCount > 0) {
+                return res.status(409).json({
+                    success: false,
+                    message: "Roll number already exists"
+                });
+            }
+        }
+
+        const result = await pool.query(
+            `UPDATE students
+             SET roll_number=$1,
+                 section_id=$2,
+                 department=$3,
+                 semester=$4,
+                 phone=$5,
+                 admission_year=$6
+             WHERE id=$7
+             RETURNING *`,
+            [
+                roll_number || student.rows[0].roll_number,
+                section_id || student.rows[0].section_id,
+                department || student.rows[0].department,
+                semester || student.rows[0].semester,
+                phone || student.rows[0].phone,
+                admission_year || student.rows[0].admission_year,
+                id
+            ]
+        );
+
+        res.json({
+            success: true,
+            message: "Student updated successfully",
+            student: result.rows[0]
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+
+    }
+};
+
+
+export const deleteStudent = async (req, res) => {
+    try {
+
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Only admin can delete student"
+            });
+        }
+
+        const { id } = req.params;
+
+        const result = await pool.query(
+            "DELETE FROM students WHERE id=$1 RETURNING id",
+            [id]
+        );
+
+        if (result.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Student not found"
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Student deleted successfully"
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+
+    }
 };
