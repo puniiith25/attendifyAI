@@ -13,6 +13,12 @@ export const userRegister = async (req, res) => {
                 message: "All fields are required"
             });
         }
+        if (role === "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Admin cannot create another admin"
+            });
+        }
         const user = await pool.query("SELECT email From users WHERE email=$1", [email]);
         if (user.rowCount > 0) {
             return res.status(409).json({success:false, message: "user already exist" });
