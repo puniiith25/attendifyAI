@@ -12,16 +12,16 @@ import {
 
 const studentRouter = express.Router();
 
-studentRouter.post("/create-student", verifyToken, authorizeRole("admin"), createStudent);
+studentRouter.post("/create-student", verifyToken,  createStudent);
 
-studentRouter.get("/get-students", verifyToken, authorizeRole("admin"), getStudents);
+studentRouter.get("/get-students", verifyToken,  getStudents);
 
-studentRouter.get("/get-student/:id", verifyToken, authorizeRole("admin"), getStudentById);
+studentRouter.get("/get-student/:id", verifyToken,  getStudentById);
 
-studentRouter.get("/my-student", verifyToken, authorizeRole("student"), getLoggedStudent);
+studentRouter.get("/my-student", verifyToken,  getLoggedStudent);
 
-studentRouter.put("/update-student/:id", verifyToken, authorizeRole("admin"), updateStudent);
+studentRouter.put("/update-student/:id", verifyToken,  updateStudent);
 
-studentRouter.delete("/delete-student/:id", verifyToken, authorizeRole("admin"), deleteStudent);
+studentRouter.delete("/delete-student/:id", verifyToken,  deleteStudent);
 
 export default studentRouter;

@@ -12,16 +12,16 @@ import {
 
 const teacherRouter = express.Router();
 
-teacherRouter.post("/create-teacher", verifyToken, authorizeRole("admin"), createTeacher);
+teacherRouter.post("/create-teacher", verifyToken, createTeacher);
 
-teacherRouter.get("/get-teachers", verifyToken, authorizeRole("admin"), getTeachers);
+teacherRouter.get("/get-teachers", verifyToken, getTeachers);
 
-teacherRouter.get("/get-teacher/:id", verifyToken, authorizeRole("admin"), getTeacherById);
+teacherRouter.get("/get-teacher/:id", verifyToken, getTeacherById);
 
-teacherRouter.get("/my-teacher", verifyToken, authorizeRole("teacher"), getLoggedTeacher);
+teacherRouter.get("/my-teacher", verifyToken, getLoggedTeacher);
 
-teacherRouter.put("/update-teacher/:id", verifyToken, authorizeRole("admin"), updateTeacher);
+teacherRouter.put("/update-teacher/:id", verifyToken, updateTeacher);
 
-teacherRouter.delete("/delete-teacher/:id", verifyToken, authorizeRole("admin"), deleteTeacher);
+teacherRouter.delete("/delete-teacher/:id", verifyToken, deleteTeacher);
 
 export default teacherRouter;

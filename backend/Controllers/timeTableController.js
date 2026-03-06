@@ -89,7 +89,12 @@ export const createTimetable = async (req, res) => {
 
 export const getAllTimetables = async (req, res) => {
     try {
-
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied"
+            });
+        }
         const result = await pool.query(`
         SELECT
         t.id,

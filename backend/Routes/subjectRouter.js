@@ -13,18 +13,18 @@ import { verifyToken, authorizeRole } from "../Midddlewares/verifyToken.js";
 
 const subjectRouter = express.Router();
 
-subjectRouter.post("/create-subject", verifyToken, authorizeRole("admin"), createSubject);
+subjectRouter.post("/create-subject", verifyToken, createSubject);
 
-subjectRouter.get("/get-subjects", verifyToken, authorizeRole("admin"), getAllSubjects);
+subjectRouter.get("/get-subjects", verifyToken, getAllSubjects);
 
-subjectRouter.get("/get-subject/:id", verifyToken, authorizeRole("admin"), getSubjectById);
+subjectRouter.get("/get-subject/:id", verifyToken, getSubjectById);
 
-subjectRouter.put("/update-subject/:id", verifyToken, authorizeRole("admin"), updateSubject);
+subjectRouter.put("/update-subject/:id", verifyToken, updateSubject);
 
-subjectRouter.delete("/delete-subject/:id", verifyToken, authorizeRole("admin"), deleteSubject);
+subjectRouter.delete("/delete-subject/:id", verifyToken, deleteSubject);
 
-subjectRouter.get("/teacher-subjects", verifyToken, authorizeRole("teacher"), getTeacherSubjects);
+subjectRouter.get("/teacher-subjects", verifyToken, getTeacherSubjects);
 
-subjectRouter.get("/student-subjects", verifyToken, authorizeRole("student"), getStudentSubjects);
+subjectRouter.get("/student-subjects", verifyToken,  getStudentSubjects);
 
 export default subjectRouter;
