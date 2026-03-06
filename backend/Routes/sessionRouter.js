@@ -1,24 +1,30 @@
 import express from "express";
-import { verifyToken } from "../Midddlewares/verifyToken.js";
 
 import {
     startAttendanceSession,
-    markAttendance,
-    getAllAttendance,
-    getTeacherAttendance,
-    getStudentAttendance
+    markManualAttendance,
+    markFaceAttendance,
+    scanQR,
+    closeAttendanceSession,
+    getSessionSummary
 } from "../Controllers/SessionController.js";
+
+import { verifyToken } from "../Midddlewares/verifyToken.js";
 
 const attendanceRouter = express.Router();
 
-attendanceRouter.post("/start-session", verifyToken, startAttendanceSession);
+attendanceRouter.post("/session/start", verifyToken, startAttendanceSession);
 
-attendanceRouter.post("/mark-attendance", verifyToken, markAttendance);
+attendanceRouter.post("/manual", verifyToken, markManualAttendance);
 
-attendanceRouter.get("/admin-attendance", verifyToken, getAllAttendance);
+attendanceRouter.post("/face", verifyToken, markFaceAttendance);
 
-attendanceRouter.get("/teacher-attendance", verifyToken, getTeacherAttendance);
+attendanceRouter.post("/qr", verifyToken, scanQR);
 
-attendanceRouter.get("/student-attendance", verifyToken, getStudentAttendance);
+attendanceRouter.put("/session/close/:id", verifyToken, closeAttendanceSession);
+
+attendanceRouter.get("/session/:id/summary", verifyToken, getSessionSummary);
+
+
 
 export default attendanceRouter;
