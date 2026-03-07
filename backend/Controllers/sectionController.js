@@ -249,9 +249,14 @@ export const getSectionDashboard = async (req, res) => {
 
         if (req.user.role === "teacher") {
 
+            const teacher = await pool.query(
+                "SELECT id FROM teachers WHERE user_id=$1",
+                [req.user.id]
+            );
+
             const teacherSection = await pool.query(
                 "SELECT section_id FROM timetable WHERE teacher_id=$1 LIMIT 1",
-                [req.user.id]
+                [teacher.rows[0].id]
             );
 
             if (
@@ -302,7 +307,6 @@ export const getSectionDashboard = async (req, res) => {
                 st.id,
                 u.name,
                 st.roll_number,
-                st.register_no
             FROM students st
             JOIN users u ON st.user_id = u.id
             WHERE st.section_id=$1

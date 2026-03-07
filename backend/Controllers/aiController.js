@@ -1,7 +1,7 @@
 import axios from "axios";
 import FormData from "form-data";
-import { pool } from "../../Database/db.js";
-import { supabase } from "../../utils/supabase.js";
+import { pool } from "../Database/db.js";
+import { supabase } from "../config/supabase.js";
 
 export const processFrame = async (req, res) => {
     try {

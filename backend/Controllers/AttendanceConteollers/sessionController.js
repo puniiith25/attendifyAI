@@ -135,7 +135,7 @@ export const startAttendanceSession = async (req, res) => {
 
         if (method === "qr") {
 
-            qr_image = await QRCode.toDataURL(qr_token);
+            qr_image =  QRCode.toDataURL(qr_token);
 
         }
 

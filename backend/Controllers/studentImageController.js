@@ -1,6 +1,6 @@
 import axios from "axios";
-import { pool } from "../../Database/db.js";
-import { supabase } from "../../config/supabase.js";
+import { pool } from "../Database/db.js";
+import { supabase } from "../config/supabase.js";
 
 export const uploadMyImage = async (req, res) => {
 

@@ -1,6 +1,8 @@
-import { pool } from "../Database/db.js";
+
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { pool } from "../Database/db.js";
+
 
 const allowedRoles = ["student", "teacher"];
 
@@ -24,6 +26,7 @@ export const userRegister = async (req, res) => {
             });
         }
 
+        
         if (!allowedRoles.includes(role)) {
             return res.status(400).json({
                 success: false,

@@ -1,6 +1,11 @@
 import { pool } from "../Database/db.js";
 
+/* =========================================
+CREATE CLASSROOM
+========================================= */
+
 export const createClassroom = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
@@ -15,7 +20,7 @@ export const createClassroom = async (req, res) => {
         if (!room_number || !building || !capacity) {
             return res.status(400).json({
                 success: false,
-                message: "All fields are required"
+                message: "room_number, building and capacity are required"
             });
         }
 
@@ -27,23 +32,27 @@ export const createClassroom = async (req, res) => {
         if (duplicate.rowCount > 0) {
             return res.status(409).json({
                 success: false,
-                message: "Room number already exists"
+                message: "Classroom already exists"
             });
         }
 
         const result = await pool.query(
-            `INSERT INTO classrooms (room_number, building, capacity)
-             VALUES ($1,$2,$3)
-             RETURNING *`,
+            `INSERT INTO classrooms
+            (room_number, building, capacity)
+            VALUES ($1,$2,$3)
+            RETURNING *`,
             [room_number, building, capacity]
         );
 
         res.status(201).json({
             success: true,
+            message: "Classroom created successfully",
             classroom: result.rows[0]
         });
 
     } catch (error) {
+
+        console.error("Create classroom error:", error);
 
         res.status(500).json({
             success: false,
@@ -51,14 +60,27 @@ export const createClassroom = async (req, res) => {
         });
 
     }
+
 };
 
 
+
+/* =========================================
+GET ALL CLASSROOMS
+========================================= */
+
 export const getAllClassrooms = async (req, res) => {
+
     try {
 
         const result = await pool.query(
-            "SELECT * FROM classrooms ORDER BY room_number"
+            `SELECT 
+                id,
+                room_number,
+                building,
+                capacity
+             FROM classrooms
+             ORDER BY room_number`
         );
 
         res.json({
@@ -69,16 +91,25 @@ export const getAllClassrooms = async (req, res) => {
 
     } catch (error) {
 
+        console.error("Get classrooms error:", error);
+
         res.status(500).json({
             success: false,
             message: "Internal server error"
         });
 
     }
+
 };
 
 
+
+/* =========================================
+GET CLASSROOM BY ID
+========================================= */
+
 export const getClassroomById = async (req, res) => {
+
     try {
 
         const { id } = req.params;
@@ -102,16 +133,25 @@ export const getClassroomById = async (req, res) => {
 
     } catch (error) {
 
+        console.error("Get classroom error:", error);
+
         res.status(500).json({
             success: false,
             message: "Internal server error"
         });
 
     }
+
 };
 
 
+
+/* =========================================
+UPDATE CLASSROOM
+========================================= */
+
 export const updateClassroom = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
@@ -149,6 +189,7 @@ export const updateClassroom = async (req, res) => {
                     message: "Room number already exists"
                 });
             }
+
         }
 
         const result = await pool.query(
@@ -174,16 +215,25 @@ export const updateClassroom = async (req, res) => {
 
     } catch (error) {
 
+        console.error("Update classroom error:", error);
+
         res.status(500).json({
             success: false,
             message: "Internal server error"
         });
 
     }
+
 };
 
 
+
+/* =========================================
+DELETE CLASSROOM
+========================================= */
+
 export const deleteClassroom = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
@@ -214,10 +264,13 @@ export const deleteClassroom = async (req, res) => {
 
     } catch (error) {
 
+        console.error("Delete classroom error:", error);
+
         res.status(500).json({
             success: false,
             message: "Internal server error"
         });
 
     }
+
 };

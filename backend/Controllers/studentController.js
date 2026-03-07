@@ -1,5 +1,6 @@
-import { pool } from "../../Database/db.js";
-import { supabase } from "../../config/supabase.js";
+
+import { supabase } from "../config/supabase.js";
+import { pool } from "../Database/db.js";
 
 export const createStudent = async (req, res) => {
     try {

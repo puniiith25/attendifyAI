@@ -16,6 +16,7 @@ import timetableRoutes from "./Routes/timeTableRouter.js";
 import subjectRoutes from "./Routes/subjectRouter.js";
 import attendanceRoutes from "./Routes/sessionRouter.js";
 import StudentImageRouter from "./Routes/StudentRouters/studentImageRouter.js";
+import dashboardRouter from "./Routes/dashboardRouter.js";
 
 
 const app = express();
@@ -56,6 +57,7 @@ app.use("/api/v1/timetable", timetableRoutes);
 app.use("/api/v1/subjects", subjectRoutes);
 app.use("/api/v1/attendance", attendanceRoutes);
 app.use("/api/v1/image", StudentImageRouter);
+app.use("/api/v1/dashboard", dashboardRouter);
 
 
 //    GLOBAL ERROR HANDLER

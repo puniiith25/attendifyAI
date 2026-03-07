@@ -1,13 +1,9 @@
 import express from "express";
 import { verifyToken } from "../../Midddlewares/verifyToken.js";
 import upload from "../../Midddlewares/upload.js";
+import { deleteMyImage, getMyImage, updateMyImage, uploadMyImage } from "../../Controllers/studentImageController.js";
 
-import {
-    uploadMyImage,
-    getMyImage,
-    updateMyImage,
-    deleteMyImage
-} from "../../Controllers/StudentControllers/studentImageController.js";
+
 
 const StudentImageRouter = express.Router();
 

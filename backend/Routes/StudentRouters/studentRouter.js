@@ -1,14 +1,7 @@
 import express from "express";
 import { authorizeRole, verifyToken } from "../../Midddlewares/verifyToken.js";
+import { createStudent, deleteStudent, getLoggedStudent, getStudentById, getStudents, updateStudent } from "../../Controllers/studentController.js";
 
-import {
-    createStudent,
-    getStudents,
-    getStudentById,
-    getLoggedStudent,
-    updateStudent,
-    deleteStudent
-} from "../../Controllers/StudentControllers/studentController.js";
 
 const studentRouter = express.Router();
 
