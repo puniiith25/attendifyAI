@@ -1,25 +1,103 @@
 import express from "express";
+import multer from "multer";
+
 import { verifyToken } from "../Midddlewares/verifyToken.js";
-import { closeAttendanceSession, startAttendanceSession } from "../Controllers/AttendanceConteollers/sessionController.js";
-import { markManualAttendance } from "../Controllers/AttendanceConteollers/manualAttendanceController.js";
-import { markFaceAttendance } from "../Controllers/AttendanceConteollers/faceAttendanceController.js";
-import { getSessionSummary } from "../Controllers/AttendanceConteollers/summaryController.js";
-import { scanQR } from "../Controllers/AttendanceConteollers/qrAttendanceController.js";
+
+import {
+    closeAttendanceSession,
+    startAttendanceSession
+} from "../Controllers/AttendanceConteollers/sessionController.js";
+
+import {
+    markManualAttendance
+} from "../Controllers/AttendanceConteollers/manualAttendanceController.js";
+
+import {
+    getSessionDetails,
+    getSessionSummary
+} from "../Controllers/AttendanceConteollers/summaryController.js";
+
+import {
+    scanQR
+} from "../Controllers/AttendanceConteollers/qrAttendanceController.js";
+
+import {
+    processFrame
+} from "../Controllers/aiController.js";
 
 const attendanceRouter = express.Router();
 
-attendanceRouter.post("/session/start", verifyToken, startAttendanceSession);
+/* ==============================
+   MULTER CONFIG
+============================== */
 
-attendanceRouter.post("/manual", verifyToken, markManualAttendance);
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 2 * 1024 * 1024
+    }
+});
 
-attendanceRouter.post("/face", verifyToken, markFaceAttendance);
+/* ==============================
+   SESSION
+============================== */
 
-attendanceRouter.post("/qr", verifyToken, scanQR);
+attendanceRouter.post(
+    "/session/start",
+    verifyToken,
+    startAttendanceSession
+);
 
-attendanceRouter.put("/session/close/:id", verifyToken, closeAttendanceSession);
+attendanceRouter.put(
+    "/session/close/:id",
+    verifyToken,
+    closeAttendanceSession
+);
 
-attendanceRouter.get("/session/:id/summary", verifyToken, getSessionSummary);
+/* ==============================
+   MANUAL ATTENDANCE
+============================== */
 
+attendanceRouter.post(
+    "/manual",
+    verifyToken,
+    markManualAttendance
+);
 
+/* ==============================
+   QR ATTENDANCE
+============================== */
+
+attendanceRouter.post(
+    "/qr",
+    verifyToken,
+    scanQR
+);
+
+/* ==============================
+   AI FACE DETECTION
+============================== */
+
+attendanceRouter.post(
+    "/frame",
+    verifyToken,
+    upload.single("frame"),
+    processFrame
+);
+
+/* ==============================
+   SESSION SUMMARY
+============================== */
+
+attendanceRouter.get(
+    "/session/:id/summary",
+    verifyToken,
+    getSessionSummary
+);
+attendanceRouter.get(
+    "/session/:id/details",
+    verifyToken,
+    getSessionDetails
+);
 
 export default attendanceRouter;

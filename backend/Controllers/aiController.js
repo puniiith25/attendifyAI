@@ -15,10 +15,6 @@ export const processFrame = async (req, res) => {
             });
         }
 
-        /* ==============================
-           GET SESSION
-        ============================== */
-
         const session = await pool.query(
             `SELECT section_id,session_status
        FROM attendance_sessions
@@ -42,10 +38,6 @@ export const processFrame = async (req, res) => {
 
         const section_id = session.rows[0].section_id;
 
-        /* ==============================
-           SEND FRAME → FASTAPI
-        ============================== */
-
         const form = new FormData();
 
         form.append("frame", req.file.buffer, "frame.jpg");
@@ -63,9 +55,17 @@ export const processFrame = async (req, res) => {
 
         for (const s of students) {
 
-            /* ==============================
-               UPLOAD CROP IMAGE
-            ============================== */
+            const exists = await pool.query(
+                `SELECT student_id
+         FROM attendance_records
+         WHERE session_id=$1 AND student_id=$2`,
+                [session_id, s.student_id]
+            );
+
+            if (exists.rowCount > 0) {
+                continue;
+            }
+
 
             const buffer = Buffer.from(s.crop, "base64");
 

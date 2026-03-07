@@ -21,41 +21,121 @@ export const createTimetable = async (req, res) => {
             end_time
         } = req.body;
 
-        if (!section_id || !subject_id || !teacher_id || !classroom_id || !day || !period_no || !start_time || !end_time) {
+        if (!section_id || !subject_id || !teacher_id ||
+            !classroom_id || !day || !period_no ||
+            !start_time || !end_time) {
+
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
             });
         }
 
-        const section = await pool.query("SELECT id FROM sections WHERE id=$1", [section_id]);
-        const subject = await pool.query("SELECT id FROM subjects WHERE id=$1", [subject_id]);
-        const teacher = await pool.query("SELECT id FROM teachers WHERE id=$1", [teacher_id]);
-        const classroom = await pool.query("SELECT id FROM classrooms WHERE id=$1", [classroom_id]);
+        /* ==============================
+           CHECK ENTITIES EXIST
+        ============================== */
 
-        if (!section.rowCount || !subject.rowCount || !teacher.rowCount || !classroom.rowCount) {
+        const section = await pool.query(
+            "SELECT id FROM sections WHERE id=$1",
+            [section_id]
+        );
+
+        const subject = await pool.query(
+            "SELECT id FROM subjects WHERE id=$1",
+            [subject_id]
+        );
+
+        const teacher = await pool.query(
+            "SELECT id FROM teachers WHERE id=$1",
+            [teacher_id]
+        );
+
+        const classroom = await pool.query(
+            "SELECT id FROM classrooms WHERE id=$1",
+            [classroom_id]
+        );
+
+        if (
+            section.rowCount === 0 ||
+            subject.rowCount === 0 ||
+            teacher.rowCount === 0 ||
+            classroom.rowCount === 0
+        ) {
             return res.status(404).json({
                 success: false,
-                message: "Invalid section, subject, teacher or classroom"
+                message: "Invalid section / subject / teacher / classroom"
             });
         }
 
-        const duplicate = await pool.query(
-            `SELECT id FROM timetable
-             WHERE section_id=$1 AND day=$2 AND period_no=$3`,
+        /* ==============================
+           CHECK SECTION CONFLICT
+        ============================== */
+
+        const sectionConflict = await pool.query(
+            `SELECT id
+             FROM timetable
+             WHERE section_id=$1
+             AND day=$2
+             AND period_no=$3`,
             [section_id, day, period_no]
         );
 
-        if (duplicate.rowCount > 0) {
+        if (sectionConflict.rowCount > 0) {
             return res.status(409).json({
                 success: false,
-                message: "Timetable already exists for this section and period"
+                message: "Section already has class in this period"
             });
         }
 
+        /* ==============================
+           CHECK TEACHER CONFLICT
+        ============================== */
+
+        const teacherConflict = await pool.query(
+            `SELECT id
+             FROM timetable
+             WHERE teacher_id=$1
+             AND day=$2
+             AND start_time < $3
+             AND end_time > $4`,
+            [teacher_id, day, end_time, start_time]
+        );
+
+        if (teacherConflict.rowCount > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Teacher already assigned during this time"
+            });
+        }
+
+        /* ==============================
+           CHECK CLASSROOM CONFLICT
+        ============================== */
+
+        const roomConflict = await pool.query(
+            `SELECT id
+             FROM timetable
+             WHERE classroom_id=$1
+             AND day=$2
+             AND start_time < $3
+             AND end_time > $4`,
+            [classroom_id, day, end_time, start_time]
+        );
+
+        if (roomConflict.rowCount > 0) {
+            return res.status(409).json({
+                success: false,
+                message: "Classroom already occupied during this time"
+            });
+        }
+
+        /* ==============================
+           INSERT TIMETABLE
+        ============================== */
+
         const result = await pool.query(
             `INSERT INTO timetable
-            (section_id,subject_id,teacher_id,classroom_id,day,period_no,start_time,end_time)
+            (section_id, subject_id, teacher_id, classroom_id, day, period_no, start_time, end_time)
             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
             RETURNING *`,
             [
@@ -72,10 +152,13 @@ export const createTimetable = async (req, res) => {
 
         res.status(201).json({
             success: true,
+            message: "Timetable created successfully",
             timetable: result.rows[0]
         });
 
-    } catch (error) {
+    } catch (err) {
+
+        console.error("Create timetable error:", err);
 
         res.status(500).json({
             success: false,
@@ -84,8 +167,6 @@ export const createTimetable = async (req, res) => {
 
     }
 };
-
-
 
 export const getAllTimetables = async (req, res) => {
     try {
