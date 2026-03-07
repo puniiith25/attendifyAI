@@ -1,306 +1,287 @@
-import { pool } from "../Database/db.js";
-import crypto from "crypto";
+// import { pool } from "../Database/db.js";
+// import crypto from "crypto";
 
-/* =====================================================
-START ATTENDANCE SESSION
-===================================================== */
 
-export const startAttendanceSession = async (req, res) => {
-    try {
+// export const startAttendanceSession = async (req, res) => {
+//     try {
 
-        if (req.user.role !== "teacher") {
-            return res.status(403).json({ success: false, message: "Only teacher allowed" });
-        }
+//         if (req.user.role !== "teacher") {
+//             return res.status(403).json({ success: false, message: "Only teacher allowed" });
+//         }
 
-        const { method } = req.body;
+//         const { method } = req.body;
 
-        if (!["face", "qr", "manual"].includes(method)) {
-            return res.status(400).json({ success: false, message: "Invalid method" });
-        }
+//         if (!["face", "qr", "manual"].includes(method)) {
+//             return res.status(400).json({ success: false, message: "Invalid method" });
+//         }
 
-        const teacher = await pool.query(
-            "SELECT id FROM teachers WHERE user_id=$1",
-            [req.user.id]
-        );
+//         const teacher = await pool.query(
+//             "SELECT id FROM teachers WHERE user_id=$1",
+//             [req.user.id]
+//         );
 
-        if (teacher.rowCount === 0) {
-            return res.status(404).json({ success: false, message: "Teacher not found" });
-        }
+//         if (teacher.rowCount === 0) {
+//             return res.status(404).json({ success: false, message: "Teacher not found" });
+//         }
 
-        const teacher_id = teacher.rows[0].id;
+//         const teacher_id = teacher.rows[0].id;
 
-        const now = new Date();
-        const day = now.toLocaleDateString("en-US", { weekday: "long" });
-        const time = now.toTimeString().slice(0, 5);
+//         const now = new Date();
+//         const day = now.toLocaleDateString("en-US", { weekday: "long" });
+//         const time = now.toTimeString().slice(0, 5);
 
-        const timetable = await pool.query(
+//         const timetable = await pool.query(
 
-            `SELECT *
-FROM timetable
-WHERE teacher_id=$1
-AND day=$2
-AND start_time <= $3
-AND end_time >= $3`,
+//             `SELECT *
+// FROM timetable
+// WHERE teacher_id=$1
+// AND day=$2
+// AND start_time <= $3
+// AND end_time >= $3`,
 
-            [teacher_id, day, time]
+//             [teacher_id, day, time]
 
-        );
+//         );
 
-        if (timetable.rowCount === 0) {
-            return res.status(404).json({ success: false, message: "No class now" });
-        }
+//         if (timetable.rowCount === 0) {
+//             return res.status(404).json({ success: false, message: "No class now" });
+//         }
 
-        const row = timetable.rows[0];
+//         const row = timetable.rows[0];
 
-        const existing = await pool.query(
+//         const existing = await pool.query(
 
-            `SELECT id FROM attendance_sessions
-WHERE teacher_id=$1
-AND period_no=$2
-AND class_date=CURRENT_DATE`,
+//             `SELECT id FROM attendance_sessions
+// WHERE teacher_id=$1
+// AND period_no=$2
+// AND class_date=CURRENT_DATE`,
 
-            [teacher_id, row.period_no]
+//             [teacher_id, row.period_no]
 
-        );
+//         );
 
-        if (existing.rowCount > 0) {
-            return res.status(409).json({ success: false, message: "Session already started" });
-        }
+//         if (existing.rowCount > 0) {
+//             return res.status(409).json({ success: false, message: "Session already started" });
+//         }
 
-        let qr_token = null;
+//         let qr_token = null;
 
-        if (method === "qr") {
-            qr_token = crypto.randomBytes(8).toString("hex");
-        }
+//         if (method === "qr") {
+//             qr_token = crypto.randomBytes(8).toString("hex");
+//         }
 
-        const session = await pool.query(
+//         const session = await pool.query(
 
-            `INSERT INTO attendance_sessions
-(section_id,subject_id,teacher_id,period_no,method,class_date,qr_token,session_status)
-VALUES ($1,$2,$3,$4,$5,CURRENT_DATE,$6,'open')
-RETURNING *`,
+//             `INSERT INTO attendance_sessions
+// (section_id,subject_id,teacher_id,period_no,method,class_date,qr_token,session_status)
+// VALUES ($1,$2,$3,$4,$5,CURRENT_DATE,$6,'open')
+// RETURNING *`,
 
-            [
-                row.section_id,
-                row.subject_id,
-                teacher_id,
-                row.period_no,
-                method,
-                qr_token
-            ]
+//             [
+//                 row.section_id,
+//                 row.subject_id,
+//                 teacher_id,
+//                 row.period_no,
+//                 method,
+//                 qr_token
+//             ]
 
-        );
+//         );
 
-        res.status(201).json({ success: true, session: session.rows[0] });
+//         res.status(201).json({ success: true, session: session.rows[0] });
 
-    } catch (err) {
+//     } catch (err) {
 
-        res.status(500).json({ success: false, message: "Server error" });
+//         res.status(500).json({ success: false, message: "Server error" });
 
-    }
-};
+//     }
+// };
 
 
-/* =====================================================
-MANUAL ATTENDANCE
-===================================================== */
 
-export const markManualAttendance = async (req, res) => {
-    try {
+// export const markManualAttendance = async (req, res) => {
+//     try {
 
-        if (req.user.role !== "teacher") {
-            return res.status(403).json({ success: false, message: "Access denied" });
-        }
+//         if (req.user.role !== "teacher") {
+//             return res.status(403).json({ success: false, message: "Access denied" });
+//         }
 
-        const { session_id, student_id, status } = req.body;
+//         const { session_id, student_id, status } = req.body;
 
-        if (!session_id || !student_id || !status) {
-            return res.status(400).json({ success: false, message: "Missing fields" });
-        }
+//         if (!session_id || !student_id || !status) {
+//             return res.status(400).json({ success: false, message: "Missing fields" });
+//         }
 
-        await pool.query(
+//         await pool.query(
 
-            `INSERT INTO attendance_records
-(session_id,student_id,status,method,marked_by)
-VALUES ($1,$2,$3,'manual','teacher')
-ON CONFLICT (session_id,student_id) DO NOTHING`,
+//             `INSERT INTO attendance_records
+// (session_id,student_id,status,method,marked_by)
+// VALUES ($1,$2,$3,'manual','teacher')
+// ON CONFLICT (session_id,student_id) DO NOTHING`,
 
-            [session_id, student_id, status]
+//             [session_id, student_id, status]
 
-        );
+//         );
 
-        res.json({ success: true, message: "Attendance marked" });
+//         res.json({ success: true, message: "Attendance marked" });
 
-    } catch (err) {
+//     } catch (err) {
 
-        res.status(500).json({ success: false, message: "Server error" });
+//         res.status(500).json({ success: false, message: "Server error" });
 
-    }
-};
+//     }
+// };
 
 
-/* =====================================================
-FACE ATTENDANCE (AI RESULT)
-===================================================== */
 
-export const markFaceAttendance = async (req, res) => {
-    try {
+// export const markFaceAttendance = async (req, res) => {
+//     try {
 
-        const { session_id, students } = req.body;
+//         const { session_id, students } = req.body;
 
-        if (!session_id || !students) {
-            return res.status(400).json({ success: false, message: "Invalid data" });
-        }
+//         if (!session_id || !students) {
+//             return res.status(400).json({ success: false, message: "Invalid data" });
+//         }
 
-        for (const s of students) {
+//         for (const s of students) {
 
-            await pool.query(
+//             await pool.query(
 
-                `INSERT INTO attendance_records
-(session_id,student_id,status,confidence,method,marked_by)
-VALUES ($1,$2,$3,$4,'face','ai')
-ON CONFLICT (session_id,student_id) DO NOTHING`,
+//                 `INSERT INTO attendance_records
+// (session_id,student_id,status,confidence,method,marked_by)
+// VALUES ($1,$2,$3,$4,'face','ai')
+// ON CONFLICT (session_id,student_id) DO NOTHING`,
 
-                [
-                    session_id,
-                    s.student_id,
-                    s.status || "present",
-                    s.confidence
-                ]
+//                 [
+//                     session_id,
+//                     s.student_id,
+//                     s.status || "present",
+//                     s.confidence
+//                 ]
 
-            );
+//             );
 
-        }
+//         }
 
-        res.json({ success: true, message: "Face attendance stored" });
+//         res.json({ success: true, message: "Face attendance stored" });
 
-    } catch (err) {
+//     } catch (err) {
 
-        res.status(500).json({ success: false, message: "Server error" });
+//         res.status(500).json({ success: false, message: "Server error" });
 
-    }
-};
+//     }
+// };
 
 
-/* =====================================================
-QR SCAN
-===================================================== */
+// export const scanQR = async (req, res) => {
+//     try {
 
-export const scanQR = async (req, res) => {
-    try {
+//         if (req.user.role !== "student") {
+//             return res.status(403).json({ success: false, message: "Only students allowed" });
+//         }
 
-        if (req.user.role !== "student") {
-            return res.status(403).json({ success: false, message: "Only students allowed" });
-        }
+//         const { qr_token } = req.body;
 
-        const { qr_token } = req.body;
+//         if (!qr_token) {
+//             return res.status(400).json({ success: false, message: "QR token required" });
+//         }
 
-        if (!qr_token) {
-            return res.status(400).json({ success: false, message: "QR token required" });
-        }
+//         const student = await pool.query(
+//             "SELECT id FROM students WHERE user_id=$1",
+//             [req.user.id]
+//         );
 
-        const student = await pool.query(
-            "SELECT id FROM students WHERE user_id=$1",
-            [req.user.id]
-        );
+//         const student_id = student.rows[0].id;
 
-        const student_id = student.rows[0].id;
+//         const session = await pool.query(
 
-        const session = await pool.query(
+//             `SELECT id
+// FROM attendance_sessions
+// WHERE qr_token=$1
+// AND session_status='open'`,
 
-            `SELECT id
-FROM attendance_sessions
-WHERE qr_token=$1
-AND session_status='open'`,
+//             [qr_token]
 
-            [qr_token]
+//         );
 
-        );
+//         if (session.rowCount === 0) {
+//             return res.status(400).json({ success: false, message: "Invalid QR" });
+//         }
 
-        if (session.rowCount === 0) {
-            return res.status(400).json({ success: false, message: "Invalid QR" });
-        }
+//         const session_id = session.rows[0].id;
 
-        const session_id = session.rows[0].id;
+//         await pool.query(
 
-        await pool.query(
+//             `INSERT INTO attendance_records
+// (session_id,student_id,status,method,marked_by)
+// VALUES ($1,$2,'present','qr','student')
+// ON CONFLICT (session_id,student_id) DO NOTHING`,
 
-            `INSERT INTO attendance_records
-(session_id,student_id,status,method,marked_by)
-VALUES ($1,$2,'present','qr','student')
-ON CONFLICT (session_id,student_id) DO NOTHING`,
+//             [session_id, student_id]
 
-            [session_id, student_id]
+//         );
 
-        );
+//         res.json({ success: true, message: "Attendance marked" });
 
-        res.json({ success: true, message: "Attendance marked" });
+//     } catch (err) {
 
-    } catch (err) {
+//         res.status(500).json({ success: false, message: "Server error" });
 
-        res.status(500).json({ success: false, message: "Server error" });
+//     }
+// };
 
-    }
-};
 
 
-/* =====================================================
-CLOSE SESSION
-===================================================== */
+// export const closeAttendanceSession = async (req, res) => {
+//     try {
 
-export const closeAttendanceSession = async (req, res) => {
-    try {
+//         if (req.user.role !== "teacher") {
+//             return res.status(403).json({ success: false, message: "Access denied" });
+//         }
 
-        if (req.user.role !== "teacher") {
-            return res.status(403).json({ success: false, message: "Access denied" });
-        }
+//         const { id } = req.params;
 
-        const { id } = req.params;
+//         await pool.query(
+//             `UPDATE attendance_sessions
+// SET session_status='closed'
+// WHERE id=$1`,
+//             [id]
+//         );
 
-        await pool.query(
-            `UPDATE attendance_sessions
-SET session_status='closed'
-WHERE id=$1`,
-            [id]
-        );
+//         res.json({ success: true, message: "Session closed" });
 
-        res.json({ success: true, message: "Session closed" });
+//     } catch (err) {
 
-    } catch (err) {
+//         res.status(500).json({ success: false, message: "Server error" });
 
-        res.status(500).json({ success: false, message: "Server error" });
+//     }
+// };
 
-    }
-};
 
 
-/* =====================================================
-SESSION SUMMARY
-===================================================== */
+// export const getSessionSummary = async (req, res) => {
+//     try {
 
-export const getSessionSummary = async (req, res) => {
-    try {
+//         const { id } = req.params;
 
-        const { id } = req.params;
+//         const result = await pool.query(
 
-        const result = await pool.query(
+//             `SELECT
+// COUNT(*) FILTER (WHERE status='present') AS present,
+// COUNT(*) FILTER (WHERE status='absent') AS absent,
+// COUNT(*) AS total
+// FROM attendance_records
+// WHERE session_id=$1`,
 
-            `SELECT
-COUNT(*) FILTER (WHERE status='present') AS present,
-COUNT(*) FILTER (WHERE status='absent') AS absent,
-COUNT(*) AS total
-FROM attendance_records
-WHERE session_id=$1`,
+//             [id]
 
-            [id]
+//         );
 
-        );
+//         res.json({ success: true, summary: result.rows[0] });
 
-        res.json({ success: true, summary: result.rows[0] });
+//     } catch (err) {
 
-    } catch (err) {
+//         res.status(500).json({ success: false, message: "Server error" });
 
-        res.status(500).json({ success: false, message: "Server error" });
-
-    }
-};
+//     }
+// };

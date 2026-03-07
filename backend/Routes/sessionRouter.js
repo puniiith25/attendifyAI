@@ -1,15 +1,10 @@
 import express from "express";
-
-import {
-    startAttendanceSession,
-    markManualAttendance,
-    markFaceAttendance,
-    scanQR,
-    closeAttendanceSession,
-    getSessionSummary
-} from "../Controllers/SessionController.js";
-
 import { verifyToken } from "../Midddlewares/verifyToken.js";
+import { closeAttendanceSession, startAttendanceSession } from "../Controllers/AttendanceConteollers/sessionController.js";
+import { markManualAttendance } from "../Controllers/AttendanceConteollers/manualAttendanceController.js";
+import { markFaceAttendance } from "../Controllers/AttendanceConteollers/faceAttendanceController.js";
+import { getSessionSummary } from "../Controllers/AttendanceConteollers/summaryController.js";
+import { scanQR } from "../Controllers/AttendanceConteollers/qrAttendanceController.js";
 
 const attendanceRouter = express.Router();
 

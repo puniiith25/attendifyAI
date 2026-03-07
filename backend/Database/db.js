@@ -1,8 +1,9 @@
 import pkg from "pg";
 const { Pool } = pkg;
-
+import dotenv from "dotenv";
+dotenv.config();
 export const pool = new Pool({
-    connectionString: 'ostgresql://postgres.toipguxmufufcqlrfdcr:fyhte1-saZsis-warcut@aws-1-ap-south-1.pooler.supabase.com:5432/postgres',
+    connectionString: process.env.DATABASE_URL,
 
 });
 
