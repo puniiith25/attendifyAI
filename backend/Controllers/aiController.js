@@ -15,9 +15,6 @@ export const processFrame = async (req, res) => {
             });
         }
 
-        /* ==============================
-           CHECK SESSION
-        ============================== */
 
         const session = await pool.query(
             `SELECT section_id, session_status
@@ -42,10 +39,6 @@ export const processFrame = async (req, res) => {
 
         const section_id = session.rows[0].section_id;
 
-        /* ==============================
-           SEND FRAME TO AI SERVICE
-        ============================== */
-
         const form = new FormData();
 
         form.append("frame", req.file.buffer, "frame.jpg");
@@ -61,18 +54,12 @@ export const processFrame = async (req, res) => {
 
         const inserted = [];
 
-        /* ==============================
-           PROCESS DETECTED STUDENTS
-        ============================== */
 
         for (const s of students) {
 
             // Skip unknown faces
             if (!s.student_id) continue;
 
-            /* ==============================
-               CHECK IF ALREADY MARKED
-            ============================== */
 
             const exists = await pool.query(
                 `SELECT student_id
@@ -83,9 +70,6 @@ export const processFrame = async (req, res) => {
 
             if (exists.rowCount > 0) continue;
 
-            /* ==============================
-               SAVE FACE IMAGE (OPTIONAL)
-            ============================== */
 
             let image_url = null;
 
@@ -97,7 +81,7 @@ export const processFrame = async (req, res) => {
                     `${session_id}/${s.student_id}_${Date.now()}.jpg`;
 
                 const { error } = await supabase.storage
-                    .from("attendance-faces")
+                    .from("Students-faces")
                     .upload(filename, buffer, {
                         contentType: "image/jpeg"
                     });
@@ -105,15 +89,12 @@ export const processFrame = async (req, res) => {
                 if (!error) {
 
                     image_url =
-                        `${process.env.SUPABASE_URL}/storage/v1/object/public/attendance-faces/${filename}`;
+                        `${process.env.SUPABASE_URL}/storage/v1/object/public/Students-faces/${filename}`;
 
                 }
 
             }
 
-            /* ==============================
-               INSERT ATTENDANCE
-            ============================== */
 
             await pool.query(
 
