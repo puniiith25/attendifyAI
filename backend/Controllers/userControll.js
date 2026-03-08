@@ -26,7 +26,7 @@ export const userRegister = async (req, res) => {
             });
         }
 
-        
+
         if (!allowedRoles.includes(role)) {
             return res.status(400).json({
                 success: false,
@@ -338,9 +338,10 @@ export const getAllUsers = async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
-            message: "Server error"
+            message: error.message
         });
     }
 

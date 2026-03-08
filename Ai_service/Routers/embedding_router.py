@@ -4,12 +4,12 @@ import requests
 import numpy as np
 from PIL import Image
 import io
+
 from Services.embedding_service import generate_embedding
 
 router = APIRouter()
 
 class ImageRequest(BaseModel):
-
     image_url: str
 
 

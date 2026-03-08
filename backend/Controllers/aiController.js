@@ -15,10 +15,14 @@ export const processFrame = async (req, res) => {
             });
         }
 
+        /* ==============================
+           CHECK SESSION
+        ============================== */
+
         const session = await pool.query(
-            `SELECT section_id,session_status
-       FROM attendance_sessions
-       WHERE id=$1`,
+            `SELECT section_id, session_status
+             FROM attendance_sessions
+             WHERE id=$1`,
             [session_id]
         );
 
@@ -38,6 +42,10 @@ export const processFrame = async (req, res) => {
 
         const section_id = session.rows[0].section_id;
 
+        /* ==============================
+           SEND FRAME TO AI SERVICE
+        ============================== */
+
         const form = new FormData();
 
         form.append("frame", req.file.buffer, "frame.jpg");
@@ -49,41 +57,59 @@ export const processFrame = async (req, res) => {
             { headers: form.getHeaders() }
         );
 
-        const students = ai.data.students;
+        const students = ai.data.students || [];
 
         const inserted = [];
 
+        /* ==============================
+           PROCESS DETECTED STUDENTS
+        ============================== */
+
         for (const s of students) {
+
+            // Skip unknown faces
+            if (!s.student_id) continue;
+
+            /* ==============================
+               CHECK IF ALREADY MARKED
+            ============================== */
 
             const exists = await pool.query(
                 `SELECT student_id
-         FROM attendance_records
-         WHERE session_id=$1 AND student_id=$2`,
+                 FROM attendance_records
+                 WHERE session_id=$1 AND student_id=$2`,
                 [session_id, s.student_id]
             );
 
-            if (exists.rowCount > 0) {
-                continue;
+            if (exists.rowCount > 0) continue;
+
+            /* ==============================
+               SAVE FACE IMAGE (OPTIONAL)
+            ============================== */
+
+            let image_url = null;
+
+            if (s.crop) {
+
+                const buffer = Buffer.from(s.crop, "base64");
+
+                const filename =
+                    `${session_id}/${s.student_id}_${Date.now()}.jpg`;
+
+                const { error } = await supabase.storage
+                    .from("attendance-faces")
+                    .upload(filename, buffer, {
+                        contentType: "image/jpeg"
+                    });
+
+                if (!error) {
+
+                    image_url =
+                        `${process.env.SUPABASE_URL}/storage/v1/object/public/attendance-faces/${filename}`;
+
+                }
+
             }
-
-
-            const buffer = Buffer.from(s.crop, "base64");
-
-            const filename = `${session_id}/${s.student_id}_${Date.now()}.jpg`;
-
-            const { data, error } = await supabase.storage
-                .from("attendance-faces")
-                .upload(filename, buffer, {
-                    contentType: "image/jpeg"
-                });
-
-            if (error) {
-                console.log(error);
-                continue;
-            }
-
-            const image_url =
-                `${process.env.SUPABASE_URL}/storage/v1/object/public/attendance-faces/${filename}`;
 
             /* ==============================
                INSERT ATTENDANCE
@@ -92,9 +118,9 @@ export const processFrame = async (req, res) => {
             await pool.query(
 
                 `INSERT INTO attendance_records
-        (session_id,student_id,status,confidence,method,marked_by,image_url)
-        VALUES ($1,$2,'present',$3,'face','ai',$4)
-        ON CONFLICT (session_id,student_id) DO NOTHING`,
+                (session_id, student_id, status, confidence, method, marked_by, image_url)
+                VALUES ($1,$2,'present',$3,'face','ai',$4)
+                ON CONFLICT (session_id,student_id) DO NOTHING`,
 
                 [session_id, s.student_id, s.confidence, image_url]
 
@@ -103,10 +129,14 @@ export const processFrame = async (req, res) => {
             inserted.push({
                 student_id: s.student_id,
                 confidence: s.confidence,
-                image: image_url
+                image_url
             });
 
         }
+
+        /* ==============================
+           RESPONSE
+        ============================== */
 
         res.json({
             success: true,
@@ -115,7 +145,7 @@ export const processFrame = async (req, res) => {
 
     } catch (err) {
 
-        console.error(err);
+        console.error("AI processing error:", err);
 
         res.status(500).json({
             success: false,

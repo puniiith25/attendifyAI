@@ -20,24 +20,20 @@ def match_faces(image, faces, students):
             score = cosine_similarity(emb, st["embedding"])
 
             if score > best_score:
-
                 best_score = score
                 best_id = st["student_id"]
 
-        if best_score > THRESHOLD:
-
-            x1,y1,x2,y2 = face.bbox.astype(int)
-
-            crop = image[y1:y2,x1:x2]
-
-            _,buf = cv2.imencode(".jpg",crop)
-
-            crop_base64 = base64.b64encode(buf).decode()
-
+        if best_score >= THRESHOLD:
             detected.append({
                 "student_id": best_id,
                 "confidence": float(best_score),
-                "crop": crop_base64
+                "status": "matched"
+            })
+        else:
+            detected.append({
+                "student_id": None,
+                "confidence": float(best_score),
+                "status": "unknown"
             })
 
     return detected

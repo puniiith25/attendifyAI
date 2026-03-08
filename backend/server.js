@@ -20,7 +20,7 @@ import dashboardRouter from "./Routes/dashboardRouter.js";
 
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 8000;
 
 
 //    GLOBAL MIDDLEWARE

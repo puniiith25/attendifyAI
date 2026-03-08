@@ -38,7 +38,7 @@ export const uploadMyImage = async (req, res) => {
         const fileName = `student_${student_id}_${Date.now()}.jpg`;
 
         const { error } = await supabase.storage
-            .from("student-faces")
+            .from("Students-faces")
             .upload(fileName, req.file.buffer, {
                 contentType: req.file.mimetype
             });
@@ -51,7 +51,7 @@ export const uploadMyImage = async (req, res) => {
         }
 
         const { data } = supabase.storage
-            .from("student-faces")
+            .from("Students-faces")
             .getPublicUrl(fileName);
 
         const image_url = data.publicUrl;
@@ -62,7 +62,7 @@ export const uploadMyImage = async (req, res) => {
         );
 
         const aiResponse = await axios.post(
-            "http://127.0.0.1:8000/create-embedding",
+            "http://127.0.0.1:9000/api/create-embedding",
             { image_url }
         );
 
