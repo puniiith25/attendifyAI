@@ -15,25 +15,31 @@ export const createTimetable = async (req, res) => {
             subject_id,
             teacher_id,
             classroom_id,
+            semester,
+            academic_year,
             day,
             period_no,
             start_time,
             end_time
         } = req.body;
 
-        if (!section_id || !subject_id || !teacher_id ||
-            !classroom_id || !day || !period_no ||
-            !start_time || !end_time) {
-
+        if (
+            !section_id ||
+            !subject_id ||
+            !teacher_id ||
+            !classroom_id ||
+            !semester ||
+            !academic_year ||
+            !day ||
+            !period_no ||
+            !start_time ||
+            !end_time
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required"
             });
         }
-
-        /* ==============================
-           CHECK ENTITIES EXIST
-        ============================== */
 
         const section = await pool.query(
             "SELECT id FROM sections WHERE id=$1",
@@ -67,17 +73,14 @@ export const createTimetable = async (req, res) => {
             });
         }
 
-        /* ==============================
-           CHECK SECTION CONFLICT
-        ============================== */
-
         const sectionConflict = await pool.query(
-            `SELECT id
-             FROM timetable
+            `SELECT id FROM timetable
              WHERE section_id=$1
-             AND day=$2
-             AND period_no=$3`,
-            [section_id, day, period_no]
+             AND semester=$2
+             AND academic_year=$3
+             AND day=$4
+             AND period_no=$5`,
+            [section_id, semester, academic_year, day, period_no]
         );
 
         if (sectionConflict.rowCount > 0) {
@@ -87,18 +90,15 @@ export const createTimetable = async (req, res) => {
             });
         }
 
-        /* ==============================
-           CHECK TEACHER CONFLICT
-        ============================== */
-
         const teacherConflict = await pool.query(
-            `SELECT id
-             FROM timetable
+            `SELECT id FROM timetable
              WHERE teacher_id=$1
-             AND day=$2
-             AND start_time < $3
-             AND end_time > $4`,
-            [teacher_id, day, end_time, start_time]
+             AND semester=$2
+             AND academic_year=$3
+             AND day=$4
+             AND start_time < $5
+             AND end_time > $6`,
+            [teacher_id, semester, academic_year, day, end_time, start_time]
         );
 
         if (teacherConflict.rowCount > 0) {
@@ -108,18 +108,15 @@ export const createTimetable = async (req, res) => {
             });
         }
 
-        /* ==============================
-           CHECK CLASSROOM CONFLICT
-        ============================== */
-
         const roomConflict = await pool.query(
-            `SELECT id
-             FROM timetable
+            `SELECT id FROM timetable
              WHERE classroom_id=$1
-             AND day=$2
-             AND start_time < $3
-             AND end_time > $4`,
-            [classroom_id, day, end_time, start_time]
+             AND semester=$2
+             AND academic_year=$3
+             AND day=$4
+             AND start_time < $5
+             AND end_time > $6`,
+            [classroom_id, semester, academic_year, day, end_time, start_time]
         );
 
         if (roomConflict.rowCount > 0) {
@@ -129,20 +126,18 @@ export const createTimetable = async (req, res) => {
             });
         }
 
-        /* ==============================
-           INSERT TIMETABLE
-        ============================== */
-
         const result = await pool.query(
             `INSERT INTO timetable
-            (section_id, subject_id, teacher_id, classroom_id, day, period_no, start_time, end_time)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+            (section_id, subject_id, teacher_id, classroom_id, semester, academic_year, day, period_no, start_time, end_time)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
             RETURNING *`,
             [
                 section_id,
                 subject_id,
                 teacher_id,
                 classroom_id,
+                semester,
+                academic_year,
                 day,
                 period_no,
                 start_time,
@@ -158,7 +153,7 @@ export const createTimetable = async (req, res) => {
 
     } catch (err) {
 
-        console.error("Create timetable error:", err);
+        console.error(err);
 
         res.status(500).json({
             success: false,
@@ -168,14 +163,18 @@ export const createTimetable = async (req, res) => {
     }
 };
 
+
+
 export const getAllTimetables = async (req, res) => {
     try {
+
         if (req.user.role !== "admin") {
             return res.status(403).json({
                 success: false,
                 message: "Access denied"
             });
         }
+
         const result = await pool.query(`
         SELECT
         t.id,
@@ -183,6 +182,8 @@ export const getAllTimetables = async (req, res) => {
         sub.name AS subject,
         u.name AS teacher,
         c.room_number AS classroom,
+        t.semester,
+        t.academic_year,
         t.day,
         t.period_no,
         t.start_time,
@@ -236,6 +237,8 @@ export const getTeacherTimetable = async (req, res) => {
         s.sec_name AS section,
         sub.name AS subject,
         c.room_number AS classroom,
+        t.semester,
+        t.academic_year,
         t.day,
         t.period_no,
         t.start_time,
@@ -287,6 +290,8 @@ export const getStudentTimetable = async (req, res) => {
         sub.name AS subject,
         u.name AS teacher,
         c.room_number AS classroom,
+        t.semester,
+        t.academic_year,
         t.day,
         t.period_no,
         t.start_time,
@@ -328,7 +333,19 @@ export const updateTimetable = async (req, res) => {
         }
 
         const { id } = req.params;
-        const { section_id, subject_id, teacher_id, classroom_id, day, period_no, start_time, end_time } = req.body;
+
+        const {
+            section_id,
+            subject_id,
+            teacher_id,
+            classroom_id,
+            semester,
+            academic_year,
+            day,
+            period_no,
+            start_time,
+            end_time
+        } = req.body;
 
         const result = await pool.query(
             `UPDATE timetable
@@ -336,13 +353,27 @@ export const updateTimetable = async (req, res) => {
             subject_id=$2,
             teacher_id=$3,
             classroom_id=$4,
-            day=$5,
-            period_no=$6,
-            start_time=$7,
-            end_time=$8
-            WHERE id=$9
+            semester=$5,
+            academic_year=$6,
+            day=$7,
+            period_no=$8,
+            start_time=$9,
+            end_time=$10
+            WHERE id=$11
             RETURNING *`,
-            [section_id, subject_id, teacher_id, classroom_id, day, period_no, start_time, end_time, id]
+            [
+                section_id,
+                subject_id,
+                teacher_id,
+                classroom_id,
+                semester,
+                academic_year,
+                day,
+                period_no,
+                start_time,
+                end_time,
+                id
+            ]
         );
 
         res.json({

@@ -1,95 +1,202 @@
-import { ChevronDown } from 'lucide-react';
-import React, { useState, useMemo, useEffect } from 'react';
-import { ScheduleXCalendar, useCalendarApp } from "@schedule-x/react";
-import { sections, eventsBySection } from '../../assets/TimetableData'
+import React, { useState } from "react"
+import { ChevronDown } from "lucide-react"
+
 import {
-    createViewWeek,
-    createViewDay,
-    createViewMonthAgenda,
-} from "@schedule-x/calendar";
-import '@schedule-x/theme-default/dist/index.css';
-import "temporal-polyfill/global";
-import { Temporal } from "temporal-polyfill";
+    sections,
+    timetableData
+} from "../../assets/TimetableData"
 
+const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
 
+const periods = [
+    { no: 1, start: "09:00", end: "10:00" },
+    { no: 2, start: "10:10", end: "11:00" },
+    { no: 3, start: "11:10", end: "12:00" },
+    { no: 4, start: "12:10", end: "13:00" },
+    { no: 5, start: "14:00", end: "15:00" },
+    { no: 6, start: "15:10", end: "16:00" }
+]
 
 const TimeTables = () => {
-    const [section, setSection] = useState(sections[0]);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
-    // Update selectedDate to first event's date when section changes
-    useEffect(() => {
-        const evts = eventsBySection[section] || [];
-        if (evts.length > 0) {
-            const firstEventDate = evts[0].start.split("T")[0];
-            setSelectedDate(firstEventDate);
-        }
-    }, [section]);
+    const [section, setSection] = useState(sections[0].id)
+    const [month, setMonth] = useState("2026-04")
+    const [view, setView] = useState("week")
 
-    const eventList = useMemo(() => {
-        const evts = eventsBySection[section] || [];
-        return evts.map(e => ({
-            id: e.id,
-            title: `${e.title} — ${e.teacher} (${e.classroom})`,
-            start: Temporal.ZonedDateTime.from(`${e.start}[Asia/Kolkata]`), // keep as Temporal object
-            end: Temporal.ZonedDateTime.from(`${e.end}[Asia/Kolkata]`),     // keep as Temporal object
-        }));
-    }, [section]);
+    const getClass = (day, period) => {
 
-    const calendarApp = useCalendarApp({
-        views: [
-            createViewWeek({
-                startHour: 8,   // 8 AM
-                endHour: 18,    // 6 PM
-            }),
-            createViewDay({
-                startHour: 8,
-                endHour: 18,
-            }),
-            createViewMonthAgenda(),
-        ],
-        events: eventList,
-    });
+        return timetableData.find(
+            t =>
+                t.section_id === section &&
+                t.day === day &&
+                t.period_no === period
+        )
 
+    }
 
     return (
-        <div className='border-2 rounded border-gray-300 p-5'>
-            <h1 className='font-semibold text-2xl'>TimeTable Management</h1>
-            <p className='text-gray-500'>Manage class schedules, assign teachers and classrooms</p>
 
-            <div className='relative flex w-[30%] mt-5'>
-                <div>
-                    <label className='text-[20px] ml-1'>Section:</label>
-                </div>
-                <div className='border-0 p-1 pl-2 w-full rounded bg-gray-200 relative'>
+        <div className="border rounded border-gray-300 p-6">
+
+            <h1 className="text-2xl font-semibold">
+                Timetable Management
+            </h1>
+
+            <p className="text-gray-500 mb-6">
+                View timetable by section and month
+            </p>
+
+            <div className="flex gap-4 mb-6">
+
+                <div className="w-[220px] relative">
+
                     <select
-                        className='appearance-none outline-0 w-full cursor-pointer bg-gray-200'
                         value={section}
-                        onChange={(e) => setSection(e.target.value)}
+                        onChange={(e) => setSection(Number(e.target.value))}
+                        className="w-full bg-gray-200 p-2 rounded appearance-none outline-none"
                     >
-                        {sections.map((item, index) => (
-                            <option key={index} value={item}>{item}</option>
+
+                        {sections.map(sec => (
+                            <option key={sec.id} value={sec.id}>
+                                {sec.sec_name}
+                            </option>
                         ))}
+
                     </select>
-                    <ChevronDown className="absolute right-2 top-2 text-gray-600 w-4 h-4 pointer-events-none" />
+
+                    <ChevronDown className="absolute right-2 top-3 w-4 h-4 text-gray-600" />
+
                 </div>
-            </div>
 
-            <div className='mt-3 flex gap-2'>
-                <label>Filter Start Date:</label>
                 <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className='border p-1 rounded'
+                    type="month"
+                    value={month}
+                    onChange={(e) => setMonth(e.target.value)}
+                    className="border p-2 rounded"
                 />
+
+                <div className="flex gap-2">
+
+                    <button
+                        onClick={() => setView("week")}
+                        className={`px-3 py-1 rounded ${view === "week"
+                            ? "bg-blue-950 text-white"
+                            : "bg-gray-200"
+                            }`}
+                    >
+                        Week
+                    </button>
+
+                    <button
+                        onClick={() => setView("day")}
+                        className={`px-3 py-1 rounded ${view === "day"
+                            ? "bg-blue-950 text-white"
+                            : "bg-gray-200"
+                            }`}
+                    >
+                        Day
+                    </button>
+
+                </div>
+
             </div>
 
-            <div className="border rounded shadow mt-5">
-                <ScheduleXCalendar calendarApp={calendarApp} />
+            <div className="overflow-x-auto">
+
+                <table className="w-full border-collapse">
+
+                    <thead>
+
+                        <tr className="bg-gray-100">
+
+                            <th className="border p-3 text-left w-[120px]">
+                                Day
+                            </th>
+
+                            {periods.map(p => (
+                                <th key={p.no} className="border p-3 text-center">
+
+                                    <div className="text-sm font-semibold">
+                                        Period {p.no}
+                                    </div>
+
+                                    <div className="text-xs text-gray-500">
+                                        {p.start} - {p.end}
+                                    </div>
+
+                                </th>
+                            ))}
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                        {days.map(day => (
+                            <tr key={day}>
+
+                                <td className="border p-3 font-semibold bg-gray-50">
+                                    {day}
+                                </td>
+
+                                {periods.map(p => {
+
+                                    const cls = getClass(day, p.no)
+
+                                    return (
+
+                                        <td key={p.no} className="border p-2 text-center">
+
+                                            {cls ? (
+
+                                                <div className="bg-indigo-100 rounded p-2 text-xs">
+
+                                                    <div className="font-semibold">
+                                                        {cls.subject}
+                                                    </div>
+
+                                                    <div className="text-gray-600">
+                                                        {cls.teacher}
+                                                    </div>
+
+                                                    <div className="text-gray-500">
+                                                        {cls.start_time} - {cls.end_time}
+                                                    </div>
+
+                                                    <div className="text-gray-500">
+                                                        {cls.classroom}
+                                                    </div>
+
+                                                </div>
+
+                                            ) : (
+
+                                                <span className="text-gray-400 text-xs">
+                                                    —
+                                                </span>
+
+                                            )}
+
+                                        </td>
+
+                                    )
+
+                                })}
+
+                            </tr>
+                        ))}
+
+                    </tbody>
+
+                </table>
+
             </div>
+
         </div>
+
     )
+
 }
 
-export default TimeTables;
+export default TimeTables
