@@ -1,23 +1,23 @@
 import jwt from "jsonwebtoken";
 
 export const verifyToken = (req, res, next) => {
+
     try {
 
         let token;
 
-        // Check Authorization Header
         const authHeader = req.headers.authorization;
 
+        // Authorization header
         if (authHeader && authHeader.startsWith("Bearer ")) {
             token = authHeader.split(" ")[1];
         }
 
-        //  Check Cookie
+        // Cookie token
         if (!token && req.cookies?.token) {
             token = req.cookies.token;
         }
 
-        // If no token
         if (!token) {
             return res.status(401).json({
                 success: false,
@@ -25,22 +25,34 @@ export const verifyToken = (req, res, next) => {
             });
         }
 
-        //  Verify token
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT_SECRET not configured");
+        }
+
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        //  Attach user data
         req.user = decoded;
 
         next();
 
     } catch (error) {
 
+        res.clearCookie("token");
+
+        if (error.name === "TokenExpiredError") {
+            return res.status(401).json({
+                success: false,
+                message: "Token expired"
+            });
+        }
+
         return res.status(401).json({
             success: false,
-            message: "Invalid or expired token"
+            message: "Invalid token"
         });
 
     }
+
 };
 export const authorizeRole = (...roles) => {
     return (req, res, next) => {
@@ -61,4 +73,4 @@ export const authorizeRole = (...roles) => {
 
         next();
     };
-};
+};2

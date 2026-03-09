@@ -2,13 +2,17 @@ import { pool } from "../../Database/db.js";
 import crypto from "crypto";
 import QRCode from "qrcode";
 
-
 /* =========================================
 START ATTENDANCE SESSION
 ========================================= */
 
 export const startAttendanceSession = async (req, res) => {
+
     try {
+
+        /* ==============================
+        ROLE CHECK
+        ============================== */
 
         if (req.user.role !== "teacher") {
             return res.status(403).json({
@@ -28,7 +32,9 @@ export const startAttendanceSession = async (req, res) => {
             });
         }
 
-        /* GET TEACHER */
+        /* ==============================
+        GET TEACHER
+        ============================== */
 
         const teacher = await pool.query(
             "SELECT id FROM teachers WHERE user_id=$1",
@@ -44,30 +50,37 @@ export const startAttendanceSession = async (req, res) => {
 
         const teacher_id = teacher.rows[0].id;
 
-        /* CURRENT INDIA TIME */
-
-        const now = new Date();
+        /* ==============================
+        CURRENT INDIA TIME
+        ============================== */
 
         const indiaTime = new Date(
-            now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+            new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
         );
 
-        const day = indiaTime.toLocaleString("en-US", { weekday: "long" });
+        const day = indiaTime.toLocaleDateString("en-US", {
+            weekday: "long"
+        });
 
-        const time = indiaTime.toTimeString().slice(0, 8);
+        const time = indiaTime.toLocaleTimeString("en-GB", {
+            hour12: false
+        });
 
+        console.log("Teacher:", teacher_id);
         console.log("Day:", day);
-        console.log("Time:", time);
+        console.log("Current Time:", time);
 
-        /* FIND CURRENT CLASS */
+        /* ==============================
+        FIND CURRENT CLASS
+        ============================== */
 
         const timetable = await pool.query(
             `SELECT *
              FROM timetable
              WHERE teacher_id=$1
-             AND day=$2
-             AND start_time <= $3
-             AND end_time >= $3`,
+             AND LOWER(day)=LOWER($2)
+             AND start_time <= $3::time
+             AND end_time >= $3::time`,
             [teacher_id, day, time]
         );
 
@@ -75,13 +88,16 @@ export const startAttendanceSession = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "No class scheduled right now",
-                time: indiaTime
+                day,
+                time
             });
         }
 
         const row = timetable.rows[0];
 
-        /* PREVENT MULTIPLE SESSIONS */
+        /* ==============================
+        PREVENT MULTIPLE SESSIONS
+        ============================== */
 
         const active = await pool.query(
             `SELECT id
@@ -98,7 +114,9 @@ export const startAttendanceSession = async (req, res) => {
             });
         }
 
-        /* QR TOKEN */
+        /* ==============================
+        QR TOKEN
+        ============================== */
 
         let qr_token = null;
         let qr_image = null;
@@ -107,11 +125,13 @@ export const startAttendanceSession = async (req, res) => {
             qr_token = crypto.randomBytes(16).toString("hex");
         }
 
-        /* CREATE SESSION */
+        /* ==============================
+        CREATE SESSION
+        ============================== */
 
         const session = await pool.query(
             `INSERT INTO attendance_sessions
-            (section_id,subject_id,teacher_id,period_no,method,class_date,qr_token,session_status)
+            (section_id, subject_id, teacher_id, period_no, method, class_date, qr_token, session_status)
             VALUES ($1,$2,$3,$4,$5,CURRENT_DATE,$6,'open')
             RETURNING *`,
             [
@@ -124,11 +144,17 @@ export const startAttendanceSession = async (req, res) => {
             ]
         );
 
-        /* GENERATE QR IMAGE */
+        /* ==============================
+        GENERATE QR IMAGE
+        ============================== */
 
         if (method === "qr") {
             qr_image = await QRCode.toDataURL(qr_token);
         }
+
+        /* ==============================
+        RESPONSE
+        ============================== */
 
         res.status(201).json({
             success: true,
@@ -148,6 +174,7 @@ export const startAttendanceSession = async (req, res) => {
         });
 
     }
+
 };
 /* =========================================
 CLOSE ATTENDANCE SESSION

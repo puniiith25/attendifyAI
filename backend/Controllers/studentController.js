@@ -1,98 +1,120 @@
+import bcrypt from "bcrypt";
 import axios from "axios";
 import { supabase } from "../config/supabase.js";
 import { pool } from "../Database/db.js";
 
-/* =========================================
-CREATE STUDENT
-========================================= */
-
 export const createStudent = async (req, res) => {
+
+    const client = await pool.connect();
+
     try {
 
         if (req.user.role !== "admin") {
             return res.status(403).json({
                 success: false,
-                message: "Only admin can create student"
+                message: "Only admin can create students"
             });
         }
 
         const {
-            user_id,
+            name,
+            email,
+            password,
             roll_number,
             section_id,
-            department,
+            branch,
             semester,
             phone,
             admission_year
         } = req.body;
 
-        if (!user_id || !roll_number || !section_id || !department || !semester || !phone || !admission_year) {
+        if (!name || !email || !password || !roll_number || !section_id) {
             return res.status(400).json({
                 success: false,
-                message: "All fields are required"
+                message: "Missing required fields"
             });
         }
 
-        /* -------------------------
-        CHECK USER
-        ------------------------- */
+        /* ========================
+        START TRANSACTION
+        ======================== */
 
-        const user = await pool.query(
-            "SELECT id, role FROM users WHERE id=$1",
-            [user_id]
+        await client.query("BEGIN");
+
+        /* ========================
+        CHECK EMAIL
+        ======================== */
+
+        const emailCheck = await client.query(
+            "SELECT id FROM users WHERE email=$1",
+            [email]
         );
 
-        if (user.rowCount === 0) {
-            return res.status(404).json({
+        if (emailCheck.rowCount > 0) {
+            await client.query("ROLLBACK");
+
+            return res.status(409).json({
                 success: false,
-                message: "User not found"
+                message: "Email already exists"
             });
         }
 
-        if (user.rows[0].role !== "student") {
-            return res.status(400).json({
-                success: false,
-                message: "User role must be student"
-            });
-        }
+        /* ========================
+        CREATE USER
+        ======================== */
 
-        /* -------------------------
+        const hash = await bcrypt.hash(password, 10);
+
+        const userResult = await client.query(
+            `INSERT INTO users(name,email,password_hash,role)
+VALUES($1,$2,$3,'student')
+RETURNING id`,
+            [name, email, hash]
+        );
+
+        const userId = userResult.rows[0].id;
+
+        /* ========================
         CHECK SECTION
-        ------------------------- */
+        ======================== */
 
-        const section = await pool.query(
+        const sectionCheck = await client.query(
             "SELECT id FROM sections WHERE id=$1",
             [section_id]
         );
 
-        if (section.rowCount === 0) {
+        if (sectionCheck.rowCount === 0) {
+            await client.query("ROLLBACK");
+
             return res.status(404).json({
                 success: false,
                 message: "Section not found"
             });
         }
 
-        /* -------------------------
-        CHECK DUPLICATE ROLL
-        ------------------------- */
+        /* ========================
+        CHECK ROLL DUPLICATE
+        ======================== */
 
-        const duplicate = await pool.query(
+        const rollCheck = await client.query(
             "SELECT id FROM students WHERE roll_number=$1",
             [roll_number]
         );
 
-        if (duplicate.rowCount > 0) {
+        if (rollCheck.rowCount > 0) {
+            await client.query("ROLLBACK");
+
             return res.status(409).json({
                 success: false,
                 message: "Roll number already exists"
             });
         }
 
-        let image_url = null;
+        /* ========================
+        UPLOAD IMAGE
+        ======================== */
 
-        /* -------------------------
-        IMAGE UPLOAD
-        ------------------------- */
+        let image_url = null;
 
         if (req.file) {
 
@@ -105,6 +127,8 @@ export const createStudent = async (req, res) => {
                 });
 
             if (error) {
+                await client.query("ROLLBACK");
+
                 return res.status(500).json({
                     success: false,
                     message: "Image upload failed"
@@ -116,22 +140,23 @@ export const createStudent = async (req, res) => {
                 .getPublicUrl(fileName);
 
             image_url = data.publicUrl;
+
         }
 
-        /* -------------------------
+        /* ========================
         CREATE STUDENT
-        ------------------------- */
+        ======================== */
 
-        const result = await pool.query(
+        const studentResult = await client.query(
             `INSERT INTO students
-            (user_id, roll_number, section_id, department, semester, phone, admission_year, image_url)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-            RETURNING *`,
+(user_id,roll_number,section_id,branch,semester,phone,admission_year,image_url)
+VALUES($1,$2,$3,$4,$5,$6,$7,$8)
+RETURNING *`,
             [
-                user_id,
+                userId,
                 roll_number,
                 section_id,
-                department,
+                branch,
                 semester,
                 phone,
                 admission_year,
@@ -139,11 +164,11 @@ export const createStudent = async (req, res) => {
             ]
         );
 
-        const student = result.rows[0];
+        const student = studentResult.rows[0];
 
-        /* -------------------------
-        CREATE FACE EMBEDDING
-        ------------------------- */
+        /* ========================
+        FACE EMBEDDING
+        ======================== */
 
         if (image_url) {
 
@@ -158,14 +183,10 @@ export const createStudent = async (req, res) => {
 
                 const vector = `[${embedding.join(",")}]`;
 
-                await pool.query(
+                await client.query(
                     `INSERT INTO student_faces
-                    (student_id, section_id, image_url, embedding)
-                    VALUES ($1,$2,$3,$4)
-                    ON CONFLICT (student_id)
-                    DO UPDATE SET
-                        embedding=$4,
-                        image_url=$3`,
+(student_id,section_id,image_url,embedding)
+VALUES($1,$2,$3,$4)`,
                     [
                         student.id,
                         section_id,
@@ -178,6 +199,12 @@ export const createStudent = async (req, res) => {
 
         }
 
+        /* ========================
+        COMMIT
+        ======================== */
+
+        await client.query("COMMIT");
+
         res.status(201).json({
             success: true,
             message: "Student created successfully",
@@ -186,14 +213,20 @@ export const createStudent = async (req, res) => {
 
     } catch (error) {
 
+        await client.query("ROLLBACK");
+
         res.status(500).json({
             success: false,
             message: error.message
         });
 
-    }
-};
+    } finally {
 
+        client.release();
+
+    }
+
+};
 /* =========================================
 GET ALL STUDENTS
 ========================================= */
@@ -212,7 +245,7 @@ export const getStudents = async (req, res) => {
             `SELECT 
                 s.id AS student_id,
                 s.roll_number,
-                s.department,
+                s.branch,
                 s.semester,
                 s.phone,
                 s.admission_year,
@@ -262,7 +295,7 @@ export const getStudentById = async (req, res) => {
             `SELECT 
                 s.id,
                 s.roll_number,
-                s.department,
+                s.branch,
                 s.semester,
                 s.phone,
                 s.admission_year,
@@ -317,7 +350,7 @@ export const getLoggedStudent = async (req, res) => {
             `SELECT 
                 s.id,
                 s.roll_number,
-                s.department,
+                s.branch,
                 s.semester,
                 s.phone,
                 s.admission_year,
@@ -417,7 +450,7 @@ export const updateStudent = async (req, res) => {
         const {
             roll_number,
             section_id,
-            department,
+            branch,
             semester,
             phone,
             admission_year
@@ -533,7 +566,7 @@ export const updateStudent = async (req, res) => {
             `UPDATE students
              SET roll_number=$1,
                  section_id=$2,
-                 department=$3,
+                 branch=$3,
                  semester=$4,
                  phone=$5,
                  admission_year=$6,
@@ -543,7 +576,7 @@ export const updateStudent = async (req, res) => {
             [
                 roll_number || student.roll_number,
                 section_id || student.section_id,
-                department || student.department,
+                branch || student.branch,
                 semester || student.semester,
                 phone || student.phone,
                 admission_year || student.admission_year,

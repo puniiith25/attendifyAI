@@ -2,13 +2,14 @@ import express from "express";
 
 
 import { verifyToken } from "../Midddlewares/verifyToken.js";
-import { deleteUser, getAllUsers, getUserById, logoutUser, updateUser, userLogin, userRegister } from "../Controllers/userControll.js";
+import { deleteUser, getAllUsers, getCurrentUser, getUserById, logoutUser, updateUser, userLogin, userRegister } from "../Controllers/userControll.js";
 
 const userRouter = express.Router();
 
 // AUTH
 
 userRouter.post("/login", userLogin);
+userRouter.get("/me", verifyToken, getCurrentUser);
 userRouter.post("/logout", verifyToken, logoutUser);
 
 // USER MANAGEMENT

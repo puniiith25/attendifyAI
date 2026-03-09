@@ -126,13 +126,13 @@ export const userLogin = async (req, res) => {
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "lax"
+            sameSite: "lax",
+            maxAge: 24 * 60 * 60 * 1000
         });
 
         res.json({
             success: true,
             message: "Login successful",
-            token,
             user: {
                 id: dbUser.id,
                 name: dbUser.name,
@@ -158,7 +158,6 @@ export const logoutUser = async (req, res) => {
 
         res.clearCookie("token", {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
             sameSite: "lax"
         });
 
@@ -385,6 +384,31 @@ export const getUserById = async (req, res) => {
             success: false,
             message: "Server error"
         });
+    }
+
+};
+
+export const getCurrentUser = async (req, res) => {
+
+    try {
+
+        const result = await pool.query(
+            "SELECT id,name,email,role FROM users WHERE id=$1",
+            [req.user.id]
+        );
+
+        res.json({
+            success: true,
+            user: result.rows[0]
+        });
+
+    } catch (error) {
+
+        res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+
     }
 
 };

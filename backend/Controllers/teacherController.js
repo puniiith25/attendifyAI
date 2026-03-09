@@ -1,6 +1,10 @@
+import bcrypt from "bcrypt";
 import { pool } from "../Database/db.js";
 
 export const createTeacher = async (req, res) => {
+
+    const client = await pool.connect();
+
     try {
 
         if (req.user.role !== "admin") {
@@ -10,70 +14,123 @@ export const createTeacher = async (req, res) => {
             });
         }
 
-        const { user_id, employee_number, department, phone } = req.body;
+        const {
+            name,
+            email,
+            password,
+            employee_number,
+            department,
+            phone
+        } = req.body;
 
-        if (!user_id || !employee_number || !department || !phone) {
+        if (!name || !email || !password || !employee_number) {
             return res.status(400).json({
                 success: false,
-                message: "All fields are required"
+                message: "Missing required fields"
             });
         }
 
-        const user = await pool.query(
-            "SELECT id, role FROM users WHERE id=$1",
-            [user_id]
+        // START TRANSACTION
+
+        await client.query("BEGIN");
+
+        // EMAIL CHECK
+
+        const emailCheck = await client.query(
+            "SELECT id FROM users WHERE email=$1",
+            [email]
         );
 
-        if (user.rowCount === 0) {
-            return res.status(404).json({
+        if (emailCheck.rowCount > 0) {
+
+            await client.query("ROLLBACK");
+
+            return res.status(409).json({
                 success: false,
-                message: "User not found"
+                message: "Email already exists"
             });
+
         }
 
-        if (user.rows[0].role !== "teacher") {
-            return res.status(400).json({
-                success: false,
-                message: "User role must be teacher"
-            });
-        }
+       
+        // CREATE USER
 
-        const duplicate = await pool.query(
+        const hash = await bcrypt.hash(password, 10);
+
+        const userResult = await client.query(
+            `INSERT INTO users(name,email,password_hash,role)
+VALUES($1,$2,$3,'teacher')
+RETURNING id`,
+            [name, email, hash]
+        );
+
+        const userId = userResult.rows[0].id;
+
+        /* ========================
+        EMPLOYEE CHECK
+        ======================== */
+
+        const duplicate = await client.query(
             "SELECT id FROM teachers WHERE employee_number=$1",
             [employee_number]
         );
 
         if (duplicate.rowCount > 0) {
+
+            await client.query("ROLLBACK");
+
             return res.status(409).json({
                 success: false,
                 message: "Employee number already exists"
             });
+
         }
 
-        const result = await pool.query(
-            `INSERT INTO teachers (user_id, employee_number, department, phone)
-             VALUES ($1,$2,$3,$4)
-             RETURNING *`,
-            [user_id, employee_number, department, phone]
+        /* ========================
+        CREATE TEACHER
+        ======================== */
+
+        const teacherResult = await client.query(
+            `INSERT INTO teachers
+(user_id,employee_number,department,phone)
+VALUES($1,$2,$3,$4)
+RETURNING *`,
+            [
+                userId,
+                employee_number,
+                department,
+                phone
+            ]
         );
+
+        /* ========================
+        COMMIT
+        ======================== */
+
+        await client.query("COMMIT");
 
         res.status(201).json({
             success: true,
             message: "Teacher created successfully",
-            teacher: result.rows[0]
+            teacher: teacherResult.rows[0]
         });
 
     } catch (error) {
 
+        await client.query("ROLLBACK");
+
         res.status(500).json({
             success: false,
-            message: "Internal server error"
+            message: error.message
         });
 
+    } finally {
+
+        client.release();
+
     }
+
 };
-
-
 
 export const getTeachers = async (req, res) => {
     try {
