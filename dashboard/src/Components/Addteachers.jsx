@@ -3,9 +3,7 @@ import React, { useState } from 'react'
 
 const AddTeacher = ({ setshowAddTeacher }) => {
     const [branch, setBranch] = useState("");
-    const [year, setyear] = useState("");
-    const mockSubjects = ['Data Structures', 'Database Systems', 'Algorithms', 'Computer Networks', 'Operating Systems'];
-    const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+    const Department = ['Data Structures', 'Database Systems', 'Algorithms', 'Computer Networks', 'Operating Systems'];
     return (
         <div className='absolute inset-0 z-90 w-full h-full  backdrop-blur-md grid'>
             <div className='place-self-center w-160 border-2 bg-[#ffffff] rounded-2xl p-10'>
@@ -33,15 +31,15 @@ const AddTeacher = ({ setshowAddTeacher }) => {
                     <input type="text" name="name" className='border-0 p-3 w-full rounded bg-gray-200' placeholder='EP0025' />
                 </div>
                 <div className='mt-5'>
-                    <h3 className='font-semibold ml-1'>Subjects</h3>
-                    <input type="text" name="name" className='border-0 p-3 w-full rounded bg-gray-200' placeholder='subjects (comma separated)' />
+                    <h3 className='font-semibold ml-1'>Phone number</h3>
+                    <input type="text" name="name" className='border-0 p-3 w-full rounded bg-gray-200' placeholder='+91 961143****' />
                 </div>
                 <div className=' relative flex flex-col mt-3'>
                     <label className='font-semibold ml-1'>Department</label>
                     <div className=' border-0 p-3  w-full  rounded bg-gray-200'>
                         <select className='appearance-none outline-0 w-full cursor-pointer' value={branch} onChange={(e) => setBranch(e.target.value)}>
                             <option value="">Choose Department</option>
-                            {mockSubjects.map((item, index) => (
+                            {Department.map((item, index) => (
                                 <option key={index} value={item}>{item}</option>
                             ))}
                         </select>

@@ -1,7 +1,14 @@
 import { pool } from "../Database/db.js";
 
+
+/* =========================================
+CREATE SECTION
+========================================= */
+
 export const createSection = async (req, res) => {
+
     try {
+
         if (req.user.role !== "admin") {
             return res.status(403).json({
                 success: false,
@@ -9,34 +16,63 @@ export const createSection = async (req, res) => {
             });
         }
 
-        let { sec_name, academic_year } = req.body;
+        let {
+            sec_name,
+            department,
+            semester,
+            capacity,
+            class_teacher
+        } = req.body;
 
-        if (!sec_name || !academic_year) {
+        if (!sec_name || !department || !semester || !capacity) {
             return res.status(400).json({
                 success: false,
-                message: "sec_name and academic_year are required"
+                message: "sec_name, department, semester and capacity are required"
             });
         }
 
         sec_name = sec_name.trim().toUpperCase();
 
         const existing = await pool.query(
-            "SELECT id FROM sections WHERE sec_name=$1",
-            [sec_name]
+            "SELECT id FROM sections WHERE sec_name=$1 AND semester=$2",
+            [sec_name, semester]
         );
 
         if (existing.rowCount > 0) {
             return res.status(409).json({
                 success: false,
-                message: "Section already exists"
+                message: "Section already exists for this semester"
             });
         }
 
+        if (class_teacher) {
+
+            const teacher = await pool.query(
+                "SELECT id FROM teachers WHERE id=$1",
+                [class_teacher]
+            );
+
+            if (teacher.rowCount === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Class teacher not found"
+                });
+            }
+
+        }
+
         const result = await pool.query(
-            `INSERT INTO sections (sec_name, academic_year)
-             VALUES ($1,$2)
-             RETURNING *`,
-            [sec_name, academic_year]
+            `INSERT INTO sections
+            (sec_name, department, semester, capacity, class_teacher)
+            VALUES ($1,$2,$3,$4,$5)
+            RETURNING *`,
+            [
+                sec_name,
+                department,
+                semester,
+                capacity,
+                class_teacher || null
+            ]
         );
 
         res.status(201).json({
@@ -55,22 +91,32 @@ export const createSection = async (req, res) => {
         });
 
     }
+
 };
 
 
+
+/* =========================================
+GET ALL SECTIONS
+========================================= */
+
 export const getSections = async (req, res) => {
+
     try {
 
-        if (req.user.role !== "admin") {
-            return res.status(403).json({
-                success: false,
-                message: "Only admin can view sections"
-            });
-        }
-
-        const result = await pool.query(
-            "SELECT * FROM sections ORDER BY id ASC"
-        );
+        const result = await pool.query(`
+            SELECT
+                s.id,
+                s.sec_name,
+                s.department,
+                s.semester,
+                s.capacity,
+                u.name AS class_teacher
+            FROM sections s
+            LEFT JOIN teachers t ON s.class_teacher = t.id
+            LEFT JOIN users u ON t.user_id = u.id
+            ORDER BY s.id ASC
+        `);
 
         res.json({
             success: true,
@@ -88,24 +134,38 @@ export const getSections = async (req, res) => {
         });
 
     }
+
 };
 
 
+
+/* =========================================
+GET SINGLE SECTION
+========================================= */
+
 export const getSingleSection = async (req, res) => {
+
     try {
 
         const { id } = req.params;
 
-        const result = await pool.query(
-            "SELECT * FROM sections WHERE id=$1",
-            [id]
-        );
+        const result = await pool.query(`
+            SELECT
+                s.*,
+                u.name AS class_teacher_name
+            FROM sections s
+            LEFT JOIN teachers t ON s.class_teacher = t.id
+            LEFT JOIN users u ON t.user_id = u.id
+            WHERE s.id=$1
+        `, [id]);
 
         if (result.rowCount === 0) {
+
             return res.status(404).json({
                 success: false,
                 message: "Section not found"
             });
+
         }
 
         res.json({
@@ -123,21 +183,37 @@ export const getSingleSection = async (req, res) => {
         });
 
     }
+
 };
 
 
+
+/* =========================================
+UPDATE SECTION
+========================================= */
+
 export const updateSection = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
+
             return res.status(403).json({
                 success: false,
                 message: "Only admin can update section"
             });
+
         }
 
         const { id } = req.params;
-        let { sec_name, academic_year } = req.body;
+
+        const {
+            sec_name,
+            department,
+            semester,
+            capacity,
+            class_teacher
+        } = req.body;
 
         const section = await pool.query(
             "SELECT * FROM sections WHERE id=$1",
@@ -145,37 +221,29 @@ export const updateSection = async (req, res) => {
         );
 
         if (section.rowCount === 0) {
+
             return res.status(404).json({
                 success: false,
                 message: "Section not found"
             });
-        }
 
-        if (sec_name) {
-
-            sec_name = sec_name.trim().toUpperCase();
-
-            const duplicate = await pool.query(
-                "SELECT id FROM sections WHERE sec_name=$1 AND id<>$2",
-                [sec_name, id]
-            );
-
-            if (duplicate.rowCount > 0) {
-                return res.status(409).json({
-                    success: false,
-                    message: "Section name already exists"
-                });
-            }
         }
 
         const result = await pool.query(
             `UPDATE sections
-             SET sec_name=$1, academic_year=$2
-             WHERE id=$3
+             SET sec_name=$1,
+                 department=$2,
+                 semester=$3,
+                 capacity=$4,
+                 class_teacher=$5
+             WHERE id=$6
              RETURNING *`,
             [
                 sec_name || section.rows[0].sec_name,
-                academic_year || section.rows[0].academic_year,
+                department || section.rows[0].department,
+                semester || section.rows[0].semester,
+                capacity || section.rows[0].capacity,
+                class_teacher || section.rows[0].class_teacher,
                 id
             ]
         );
@@ -196,17 +264,26 @@ export const updateSection = async (req, res) => {
         });
 
     }
+
 };
 
 
+
+/* =========================================
+DELETE SECTION
+========================================= */
+
 export const deleteSection = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
+
             return res.status(403).json({
                 success: false,
                 message: "Only admin can delete section"
             });
+
         }
 
         const { id } = req.params;
@@ -217,158 +294,17 @@ export const deleteSection = async (req, res) => {
         );
 
         if (result.rowCount === 0) {
+
             return res.status(404).json({
                 success: false,
                 message: "Section not found"
             });
+
         }
 
         res.json({
             success: true,
             message: "Section deleted successfully"
-        });
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            success: false,
-            message: "Internal server error"
-        });
-
-    }
-};
-
-
-export const getSectionDashboard = async (req, res) => {
-
-    try {
-
-        const { id } = req.params;
-
-        if (req.user.role === "teacher") {
-
-            const teacher = await pool.query(
-                "SELECT id FROM teachers WHERE user_id=$1",
-                [req.user.id]
-            );
-
-            const teacherSection = await pool.query(
-                "SELECT section_id FROM timetable WHERE teacher_id=$1 LIMIT 1",
-                [teacher.rows[0].id]
-            );
-
-            if (
-                teacherSection.rowCount === 0 ||
-                teacherSection.rows[0].section_id != id
-            ) {
-                return res.status(403).json({
-                    success: false,
-                    message: "You can only access your assigned section"
-                });
-            }
-
-        }
-
-        if (req.user.role === "student") {
-
-            const studentSection = await pool.query(
-                "SELECT section_id FROM students WHERE user_id=$1",
-                [req.user.id]
-            );
-
-            if (
-                studentSection.rowCount === 0 ||
-                studentSection.rows[0].section_id != id
-            ) {
-                return res.status(403).json({
-                    success: false,
-                    message: "You can only access your section"
-                });
-            }
-
-        }
-
-        const section = await pool.query(
-            "SELECT * FROM sections WHERE id=$1",
-            [id]
-        );
-
-        if (section.rowCount === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Section not found"
-            });
-        }
-
-        const students = await pool.query(`
-            SELECT 
-                st.id,
-                u.name,
-                st.roll_number,
-            FROM students st
-            JOIN users u ON st.user_id = u.id
-            WHERE st.section_id=$1
-            ORDER BY st.roll_number
-        `, [id]);
-
-        const teachers = await pool.query(`
-            SELECT DISTINCT
-                t.id,
-                u.name,
-                t.department
-            FROM timetable tb
-            JOIN teachers t ON tb.teacher_id = t.id
-            JOIN users u ON t.user_id = u.id
-            WHERE tb.section_id=$1
-        `, [id]);
-
-        const subjects = await pool.query(`
-            SELECT DISTINCT
-                s.id,
-                s.name,
-                s.code
-            FROM timetable tb
-            JOIN subjects s ON tb.subject_id = s.id
-            WHERE tb.section_id=$1
-        `, [id]);
-
-        const timetable = await pool.query(`
-            SELECT
-                tb.day,
-                tb.period_no,
-                tb.start_time,
-                tb.end_time,
-                sub.name AS subject,
-                u.name AS teacher,
-                c.room_number
-            FROM timetable tb
-            JOIN subjects sub ON tb.subject_id=sub.id
-            JOIN teachers t ON tb.teacher_id=t.id
-            JOIN users u ON t.user_id=u.id
-            JOIN classrooms c ON tb.classroom_id=c.id
-            WHERE tb.section_id=$1
-            ORDER BY tb.day, tb.period_no
-        `, [id]);
-
-        const attendance = await pool.query(`
-            SELECT 
-                COUNT(*) FILTER (WHERE ar.status='present') AS present,
-                COUNT(*) FILTER (WHERE ar.status='absent') AS absent
-            FROM attendance_records ar
-            JOIN attendance_sessions s ON ar.session_id=s.id
-            WHERE s.section_id=$1
-        `, [id]);
-
-        res.json({
-            success: true,
-            section: section.rows[0],
-            students: students.rows,
-            teachers: teachers.rows,
-            subjects: subjects.rows,
-            timetable: timetable.rows,
-            attendance_summary: attendance.rows[0]
         });
 
     } catch (error) {

@@ -4,7 +4,6 @@ import { verifyToken } from "../Midddlewares/verifyToken.js";
 import {
     createSection,
     deleteSection,
-    getSectionDashboard,
     getSections,
     getSingleSection,
     updateSection
@@ -22,6 +21,5 @@ secRouter.put("/update-sec/:id", verifyToken, updateSection);
 
 secRouter.delete("/delete-sec/:id", verifyToken, deleteSection);
 
-secRouter.get("/sec-dashboard/:id", verifyToken, getSectionDashboard);
 
 export default secRouter;

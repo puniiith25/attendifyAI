@@ -21,7 +21,7 @@ const Sections = ({ setshowAddSection }) => {
                 <div className='grid grid-cols-[0.5fr_0.7fr_0.7fr_0.7fr_0.8fr_0.4fr] border-b-2 border-gray-400 p-2 ml-3 font-semibold text-[14px]'>
                     <p>Section</p>
                     <p>Department</p>
-                    <p>Year</p>
+                    <p>Semister</p>
                     <p>Class Teacher</p>
                     <p>Enrollment</p>
                     <p>Action</p>

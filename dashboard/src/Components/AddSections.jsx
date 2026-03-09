@@ -13,14 +13,14 @@ const AddSections = ({ setshowAddSection }) => {
         'Dr. Kavita Menon'
     ];
 
-    const years = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
+    const years = ['1st sem', '2nd sem', '3rd sem', '4th sem', '5th sem', '6th sem', '7th sem', '8th sem'];
     return (
         <div className='absolute inset-0 z-90 w-full h-full  backdrop-blur-md grid'>
             <div className='place-self-center w-140  border-2 bg-[#ffffff] rounded-2xl p-10'>
                 <div className='flex justify-between'>
                     <div>
-                        <h1 className='font-semibold text-4xl text-blue-950'>Add New Student</h1>
-                        <p className=' text-gray-500 text-[18px]'>Enter student details to create a new profile</p>
+                        <h1 className='font-semibold text-4xl text-blue-950'>Add New Section</h1>
+                        <p className=' text-gray-500 text-[18px]'>Enter Section details to create </p>
                     </div>
                     <X onClick={() => setshowAddSection(false)} className='cursor-pointer h-14 w-10' />
                 </div>
@@ -42,10 +42,10 @@ const AddSections = ({ setshowAddSection }) => {
                     </div>
                 </div>
                 <div className=' relative flex flex-col mt-3'>
-                    <label className='font-semibold ml-1'>Year</label>
+                    <label className='font-semibold ml-1'>semister</label>
                     <div className=' border-0 p-3  w-full  rounded bg-gray-200'>
                         <select className='appearance-none outline-0 w-full cursor-pointer' value={year} onChange={(e) => setyear(e.target.value)}>
-                            <option value="">Select year</option>
+                            <option value="">Select Semister</option>
                             {years.map((item, index) => (
                                 <option key={index} value={item}>{item}</option>
                             ))}
@@ -71,8 +71,8 @@ const AddSections = ({ setshowAddSection }) => {
 
                     </div>
                 </div>
-                
-              
+
+
                 <div className='w-full flex gap-4 justify-end mt-10 '>
                     <button className='border-2 p-2 rounded-2xl w-35 text-2xl bg-gray-200 cursor-pointer' onClick={() => setshowAddSection(false)}> cancel</button>
                     <button className='border-2 p-2 rounded-2xl w-50 text-2xl flex  justify-center bg-blue-950 text-center text-white cursor-pointer'>+ Add Section</button>
