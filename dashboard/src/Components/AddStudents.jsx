@@ -23,7 +23,7 @@ const AddStudents = ({ setshowAddStudent }) => {
     const sections_list = ['CSE-A', 'CSE-B', 'CSE-C', 'CSE-D', 'CSE-E']
 
     const Semister_list = [
-        '1st Sem', '2nd Sem', '3rd Sem', '4th Sem',
+        '1st \Sem', '2nd Sem', '3rd Sem', '4th Sem',
         '5th Sem', '6th Sem', '7th Sem', '8th Sem'
     ]
 
