@@ -219,7 +219,7 @@ VALUES($1,$2,$3,$4)`,
             success: false,
             message: error.message
         });
-
+        console.log(error)
     } finally {
 
         client.release();

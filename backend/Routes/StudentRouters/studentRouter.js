@@ -1,11 +1,11 @@
 import express from "express";
 import { authorizeRole, verifyToken } from "../../Midddlewares/verifyToken.js";
 import { createStudent, deleteStudent, getLoggedStudent, getStudentById, getStudents, updateStudent } from "../../Controllers/studentController.js";
-
+import upload from "../../Midddlewares/upload.js";
 
 const studentRouter = express.Router();
 
-studentRouter.post("/create-student", verifyToken, createStudent);
+studentRouter.post("/create-student", verifyToken, upload.single("image"), createStudent);
 
 studentRouter.get("/get-students", verifyToken, getStudents);
 

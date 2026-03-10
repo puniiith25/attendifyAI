@@ -1,311 +1,276 @@
-import { ChevronDown, X } from 'lucide-react'
-import React, { useContext, useState } from 'react'
+import { X } from "lucide-react"
+import React, { useContext, useState } from "react"
 import axios from "axios"
-import { AppContext } from '../Context/AppContext';
+import { AppContext } from "../Context/AppContext"
 
 const AddStudents = ({ setshowAddStudent }) => {
-    const { sections } = useContext(AppContext);
 
-    const [name, setName] = useState("")
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [roll, setRoll] = useState("")
-    const [phone, setPhone] = useState("")
-    const [year, setYear] = useState("")
+    const { sections } = useContext(AppContext)
 
-    const [branch, setBranch] = useState("")
-    const [semester, setSemester] = useState("")
-    const [section, setSection] = useState("")
+    const [loading, setLoading] = useState(false)
+
+    const [form, setForm] = useState({
+        name: "",
+        email: "",
+        password: "",
+        roll_number: "",
+        phone: "",
+        admission_year: "",
+        branch: "",
+        semester: 0,
+        section_id: 0
+    })
 
     const [image, setImage] = useState(null)
     const [preview, setPreview] = useState(null)
 
-    const sections_list = ['CSE-A', 'CSE-B', 'CSE-C', 'CSE-D', 'CSE-E']
+    const branches = ["CSE", "ECE", "ME", "Civil", "AI & DS"]
 
-    const Semister_list = [
-        '1st \Sem', '2nd Sem', '3rd Sem', '4th Sem',
-        '5th Sem', '6th Sem', '7th Sem', '8th Sem'
+    const semesters = [
+        { value: 1, label: "1st Sem" },
+        { value: 2, label: "2nd Sem" },
+        { value: 3, label: "3rd Sem" },
+        { value: 4, label: "4th Sem" },
+        { value: 5, label: "5th Sem" },
+        { value: 6, label: "6th Sem" },
+        { value: 7, label: "7th Sem" },
+        { value: 8, label: "8th Sem" }
     ]
 
-    const branches = [
-        'CSE', 'ECE', 'ME', 'Civil', 'AI & DS'
-    ]
-
-
-    const handleImageChange = (e) => {
-
-        const file = e.target.files[0]
-
-        if (file) {
-            setImage(file)
-            setPreview(URL.createObjectURL(file))
-        }
-
+    const handleChange = (e) => {
+        const { name, value } = e.target
+        setForm(prev => ({
+            ...prev,
+            [name]: value
+        }))
     }
 
+    const handleNumberChange = (e) => {
+        const { name, value } = e.target
+        setForm(prev => ({
+            ...prev,
+            [name]: value ? Number(value) : 0
+        }))
+    }
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        setImage(file)
+        setPreview(URL.createObjectURL(file))
+    }
+
+    const resetForm = () => {
+        setForm({
+            name: "",
+            email: "",
+            password: "",
+            roll_number: "",
+            phone: "",
+            admission_year: "",
+            branch: "",
+            semester: 0,
+            section_id: 0
+        })
+        setImage(null)
+        setPreview(null)
+    }
 
     const handleSubmit = async () => {
 
+        if (!form.name || !form.email || !form.password || !form.roll_number || !form.section_id) {
+            alert("Please fill all required fields")
+            return
+        }
+
         try {
+
+            setLoading(true)
 
             const formData = new FormData()
 
-            formData.append("name", name)
-            formData.append("email", email)
-            formData.append("password", password)
-            formData.append("roll_number", roll)
-            formData.append("phone", phone)
-            formData.append("admission_year", year)
-            formData.append("branch", branch)
-            formData.append("semester", semester)
-            formData.append("section", section)
+            Object.entries(form).forEach(([key, value]) => {
+                formData.append(key, value)
+            })
 
-            if (image) {
-                formData.append("image", image)
-            }
+            if (image) formData.append("image", image)
 
             const res = await axios.post(
-                "http://localhost:5000/api/students/create-student",
+                "http://localhost:8000/api/v1/students/create-student",
                 formData,
                 {
-                    headers: {
-                        "Content-Type": "multipart/form-data"
-                    }
+                    withCredentials: true,
+                    headers: { "Content-Type": "multipart/form-data" }
                 }
             )
 
-            console.log(res.data)
+            if (res.data.success) {
 
-            setshowAddStudent(false)
+                resetForm()
+
+                setshowAddStudent(false)
+
+            }
 
         } catch (err) {
 
             console.error(err)
 
+            alert(err.response?.data?.message || "Failed to create student")
+
+        } finally {
+
+            setLoading(false)
+
         }
 
     }
 
-
     return (
 
-        <div className='absolute inset-0 z-90 w-full h-full backdrop-blur-md grid'>
+        <div className="absolute inset-0 z-90 w-full h-full backdrop-blur-md grid">
 
-            <div className='place-self-center w-140 border bg-white rounded-2xl p-8'>
+            <div className="place-self-center w-140 border bg-white rounded-2xl p-8">
 
-                <div className='flex justify-between'>
-
-                    <div>
-                        <h1 className='font-semibold text-3xl text-blue-950'>
-                            Add New Student
-                        </h1>
-                    </div>
+                <div className="flex justify-between">
+                    <h1 className="font-semibold text-3xl text-blue-950">
+                        Add New Student
+                    </h1>
 
                     <X
                         onClick={() => setshowAddStudent(false)}
-                        className='cursor-pointer'
+                        className="cursor-pointer"
                     />
-
                 </div>
 
+                <div className="mt-6 flex items-center gap-4">
 
-                {/* Image Upload */}
-
-                <div className='mt-6 flex items-center gap-4'>
-
-                    <div className='w-16 h-16 rounded-full overflow-hidden border'>
-
-                        {preview ? (
-
-                            <img
-                                src={preview}
-                                className='w-full h-full object-cover'
-                            />
-
-                        ) : (
-
-                            <div className='w-full h-full bg-gray-200 flex items-center justify-center text-xs'>
-                                Photo
-                            </div>
-
-                        )}
-
+                    <div className="w-16 h-16 rounded-full overflow-hidden border">
+                        {preview
+                            ? <img src={preview} className="w-full h-full object-cover" />
+                            : <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs">Photo</div>
+                        }
                     </div>
 
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                    />
+                    <input type="file" accept="image/*" onChange={handleImageChange} />
 
                 </div>
 
-
-                {/* Name */}
-
-                <div className='mt-4'>
-
-                    <label className='text-sm font-semibold'>Name</label>
-
+                <div className="mt-4">
+                    <label className="text-sm font-semibold">Name</label>
                     <input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        name="name"
+                        value={form.name}
+                        onChange={handleChange}
+                        className="py-2 px-3 w-full rounded bg-gray-200"
                     />
-
                 </div>
 
-
-                {/* Email */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Email</label>
-
+                <div className="mt-3">
+                    <label className="text-sm font-semibold">Email</label>
                     <input
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        name="email"
+                        value={form.email}
+                        onChange={handleChange}
+                        className="py-2 px-3 w-full rounded bg-gray-200"
                     />
-
                 </div>
 
-
-                {/* Password */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Password</label>
-
+                <div className="mt-3">
+                    <label className="text-sm font-semibold">Password</label>
                     <input
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        name="password"
+                        type="password"
+                        value={form.password}
+                        onChange={handleChange}
+                        className="py-2 px-3 w-full rounded bg-gray-200"
                     />
-
                 </div>
 
-
-                {/* Roll */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Roll Number</label>
-
+                <div className="mt-3">
+                    <label className="text-sm font-semibold">Roll Number</label>
                     <input
-                        value={roll}
-                        onChange={(e) => setRoll(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        name="roll_number"
+                        value={form.roll_number}
+                        onChange={handleChange}
+                        className="py-2 px-3 w-full rounded bg-gray-200"
                     />
-
                 </div>
 
-
-                {/* Phone */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Phone</label>
-
+                <div className="mt-3">
+                    <label className="text-sm font-semibold">Phone</label>
                     <input
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        name="phone"
+                        value={form.phone}
+                        onChange={handleChange}
+                        className="py-2 px-3 w-full rounded bg-gray-200"
                     />
-
                 </div>
 
-
-                {/* Admission */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Admission Year</label>
-
+                <div className="mt-3">
+                    <label className="text-sm font-semibold">Admission Year</label>
                     <input
-                        value={year}
-                        onChange={(e) => setYear(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        name="admission_year"
+                        value={form.admission_year}
+                        onChange={handleChange}
+                        className="py-2 px-3 w-full rounded bg-gray-200"
                     />
-
                 </div>
 
-
-                {/* Section */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Section</label>
-
+                <div className="mt-3">
+                    <label className="text-sm font-semibold">Section</label>
                     <select
-                        value={section}
-                        onChange={(e) => setSection(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        name="section_id"
+                        value={form.section_id}
+                        onChange={handleNumberChange}
+                        className="py-2 px-3 w-full rounded bg-gray-200"
                     >
-
                         <option value="">Select</option>
-
-                        {sections.map((item, index) => (
-                            <option key={item.section_id} value={item.section_id}>{item.sec_name}</option>
+                        {sections.map(item => (
+                            <option key={item.id} value={item.id}>
+                                {item.sec_name}
+                            </option>
                         ))}
-
                     </select>
-
                 </div>
 
-
-                {/* Branch */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Branch</label>
-
+                <div className="mt-3">
+                    <label className="text-sm font-semibold">Branch</label>
                     <select
-                        value={branch}
-                        onChange={(e) => setBranch(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        name="branch"
+                        value={form.branch}
+                        onChange={handleChange}
+                        className="py-2 px-3 w-full rounded bg-gray-200"
                     >
-
                         <option value="">Select</option>
-
-                        {branches.map((item, index) => (
-                            <option key={index} value={item}>{item}</option>
+                        {branches.map(b => (
+                            <option key={b} value={b}>{b}</option>
                         ))}
-
                     </select>
-
                 </div>
 
-
-                {/* Semester */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Semester</label>
-
+                <div className="mt-3">
+                    <label className="text-sm font-semibold">Semester</label>
                     <select
-                        value={semester}
-                        onChange={(e) => setSemester(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        name="semester"
+                        value={form.semester}
+                        onChange={handleNumberChange}
+                        className="py-2 px-3 w-full rounded bg-gray-200"
                     >
-
                         <option value="">Select</option>
-
-                        {Semister_list.map((item, index) => (
-                            <option key={index} value={item}>{item}</option>
+                        {semesters.map(s => (
+                            <option key={s.value} value={s.value}>
+                                {s.label}
+                            </option>
                         ))}
-
                     </select>
-
                 </div>
 
-
-                {/* Buttons */}
-
-                <div className='flex justify-end gap-4 mt-8'>
+                <div className="flex justify-end gap-4 mt-8">
 
                     <button
-                        className='bg-gray-200 px-6 py-2 rounded'
+                        className="bg-gray-200 px-6 py-2 rounded"
                         onClick={() => setshowAddStudent(false)}
                     >
                         Cancel
@@ -313,9 +278,10 @@ const AddStudents = ({ setshowAddStudent }) => {
 
                     <button
                         onClick={handleSubmit}
-                        className='bg-blue-950 text-white px-6 py-2 rounded'
+                        disabled={loading}
+                        className="bg-blue-950 text-white px-6 py-2 rounded"
                     >
-                        + Add Student
+                        {loading ? "Creating..." : "+ Add Student"}
                     </button>
 
                 </div>
@@ -323,6 +289,7 @@ const AddStudents = ({ setshowAddStudent }) => {
             </div>
 
         </div>
+
     )
 }
 
