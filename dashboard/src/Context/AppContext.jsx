@@ -39,7 +39,7 @@ const AppContextProvider = ({ children }) => {
         try {
 
             const res = await axios.get(
-                `${backendUrl}/teachers`,
+                `${backendUrl}/teachers/get-teachers`,
                 { withCredentials: true }
             );
 
@@ -60,7 +60,7 @@ const AppContextProvider = ({ children }) => {
         try {
 
             const res = await axios.get(
-                `${backendUrl}/sections`,
+                `${backendUrl}/sections/get-secs`,
                 { withCredentials: true }
             );
 

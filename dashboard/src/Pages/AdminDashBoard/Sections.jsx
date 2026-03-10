@@ -1,9 +1,12 @@
 import { Edit, Search, Trash2, UserPlus } from 'lucide-react'
-import React from 'react'
+import React, { useContext } from 'react'
 import { section_list } from '../../assets/Sectiondata.js'
 import { useNavigate } from 'react-router-dom'
+import { AppContext } from '../../Context/AppContext.jsx'
 
 const Sections = ({ setshowAddSection }) => {
+    const { sections } = useContext(AppContext);
+
     return (
         <div className=' border-2 mt-3 rounded p-6 border-gray-300'>
             <h1 className='font-semibold text-2xl'>Section Management </h1>
@@ -23,16 +26,16 @@ const Sections = ({ setshowAddSection }) => {
                     <p>Department</p>
                     <p>Semister</p>
                     <p>Class Teacher</p>
-                    <p>Enrollment</p>
+                    <p>Capacity</p>
                     <p>Action</p>
                 </div>
-                {section_list.map((item, index) => (
-                    <div key={index} className='grid grid-cols-[0.4fr_0.8fr_0.7fr_0.8fr_0.5fr_0.2fr_0.2fr_0.2fr] border-b text-gray-500 border-gray-300 m-4 items-center    pb-2'>
-                        <p className='font-semibold text-[12px]'>{item.section}</p>
+                {sections.map((item, index) => (
+                    <div key={item.id} className='grid grid-cols-[0.4fr_0.8fr_0.7fr_0.8fr_0.5fr_0.2fr_0.2fr_0.2fr] border-b text-gray-500 border-gray-300 m-4 items-center    pb-2'>
+                        <p className='font-semibold text-[12px]'>{item.sec_name}</p>
                         <p className='text-[12px] ml-3'>{item.department}</p>
-                        <p className='text-[12px]'>{item.year_course}</p>
+                        <p className='text-[12px]'>{item.semester}</p>
                         <p className=' flex  align-middle text-[12px] ml-3'>{item.class_teacher}</p>
-                        <p className=' flex text-[14px] ml-3'>{item.enrollment}</p>
+                        <p className=' flex text-[14px] ml-3'>{item.capacity}</p>
                         <UserPlus className='cursor-pointer h-4 w-6' />
                         <Edit className='cursor-pointer h-4 w-6' />
                         <Trash2 className='cursor-pointer h-4 w-6' />

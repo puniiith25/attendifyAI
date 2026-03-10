@@ -39,7 +39,7 @@ const generateEvents = (timetable, section) => {
     return events
 }
 
-const TimeTables = () => {
+const TimeTables = ({ setshowAddTimeTable }) => {
 
     const [section, setSection] = useState(sections[0].id)
 
@@ -49,9 +49,15 @@ const TimeTables = () => {
 
         <div className="p-6 border rounded">
 
-            <h1 className="text-2xl font-semibold mb-4">
-                Timetable
-            </h1>
+            <div className='flex justify-between mb-10 mt-5 '>
+                <div>
+                    <h1 className='font-semibold text-2xl'>Time Tables Management </h1>
+                    <p className='text-gray-500'>Manage Time Tables and academic information</p>
+                </div>
+                <div className='border-0 rounded w-50 flex justify-center mt-4 p-4 bg-blue-950 text-white cursor-pointer'>
+                    <button type="button" className='font-semibold cursor-pointer' onClick={() => setshowAddTimeTable(true)} >+Add Timetable</button>
+                </div>
+            </div>
 
             <select
                 value={section}

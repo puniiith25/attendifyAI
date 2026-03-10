@@ -18,7 +18,7 @@ teacherRouter.get("/get-teachers", verifyToken, getTeachers);
 
 teacherRouter.get("/get-teacher/:id", verifyToken, getTeacherById);
 
-teacherRouter.get("/my-teacher", verifyToken, getLoggedTeacher);
+teacherRouter.get("/me-teacher", verifyToken, getLoggedTeacher);
 
 teacherRouter.put("/update-teacher/:id", verifyToken, updateTeacher);
 

@@ -1,6 +1,8 @@
 import { Edit, Search, Trash2 } from 'lucide-react'
 import { useContext } from 'react'
 import { AppContext } from '../../Context/AppContext'
+import avatar from '../../assets/images/default-avatar-profile.jpg'
+
 
 
 const Students = ({ setshowAddStudent }) => {
@@ -21,7 +23,8 @@ const Students = ({ setshowAddStudent }) => {
             <div className="border border-gray-300 mt-10 rounded overflow-hidden">
 
                 {/* Header */}
-                <div className="grid grid-cols-7 bg-gray-100 px-6 py-3 text-sm font-semibold text-gray-700">
+                <div className="grid grid-cols-8 bg-gray-100 px-6 py-3 text-sm font-semibold text-gray-700">
+                    <p>Avatar</p>
                     <p>Name</p>
                     <p>Roll Number</p>
                     <p>Branch</p>
@@ -35,8 +38,26 @@ const Students = ({ setshowAddStudent }) => {
                 {students.map((item) => (
                     <div
                         key={item.student_id}
-                        className="grid grid-cols-7 px-6 py-3 items-center border-t text-sm text-gray-600 hover:bg-gray-50"
+                        className="grid grid-cols-8 px-6 py-3 items-center border-t text-sm text-gray-600 hover:bg-gray-50"
                     >
+                        {item.image_url ? (<div>
+
+                            <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="w-10 h-10 rounded-full object-cover border"
+                            />
+
+                        </div>) : (<div>
+
+                            <img
+                                src={avatar}
+                                alt={item.name}
+                                className="w-10 h-10 rounded-full object-cover border"
+                            />
+
+                        </div>)}
+
                         <p className="font-medium text-gray-800">{item.name}</p>
 
                         <p>{item.roll_number}</p>

@@ -14,10 +14,18 @@ import AddTeacher from "./Components/Addteachers";
 import LoginPage from "./Components/LoginPage";
 import ProtectedRoute from "./middleware/ProtectionRoute";
 import AddSections from "./Components/AddSections";
+import AddTimeTable from "./Components/AddTimetable";
+import Subjects from "./Pages/AdminDashBoard/Subjects";
+import ClassRoom from "./Pages/AdminDashBoard/ClassRoom";
+import AddSubjects from "./Components/AddSubjects";
+import AddClassRoom from "./Components/AddClassRoom";
 const App = () => {
   const [showAddStudent, setshowAddStudent] = useState(false);
   const [showAddteacher, setshowAddTeacher] = useState(false);
   const [showAddSection, setshowAddSection] = useState(false);
+  const [showAddSubject, setshowAddSubject] = useState(false);
+  const [showAddclassRoom, setshowAddClassroom] = useState(false);
+  const [showAddTimeTable, setshowAddTimeTable] = useState(false);
 
   return (
     <div >
@@ -26,6 +34,9 @@ const App = () => {
       {showAddStudent ? <AddStudents setshowAddStudent={setshowAddStudent} /> : <></>}
       {showAddteacher ? <AddTeacher setshowAddTeacher={setshowAddTeacher} /> : <></>}
       {showAddSection ? <AddSections setshowAddSection={setshowAddSection} /> : <></>}
+      {showAddTimeTable ? <AddTimeTable setshowAddTimeTable={setshowAddTimeTable} /> : <></>}
+      {showAddSubject ? <AddSubjects setshowAddSubject={setshowAddSubject} /> : <></>}
+      {showAddclassRoom ? <AddClassRoom setshowAddClassroom={setshowAddClassroom} /> : <></>}
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={
@@ -39,7 +50,9 @@ const App = () => {
 
           <Route path="teachers" element={<Teachers setshowAddTeacher={setshowAddTeacher} />} />
           <Route path="sections" element={<Sections setshowAddSection={setshowAddSection} />} />
-          <Route path="timetable" element={<TimeTables />} />
+          <Route path="subjects" element={<Subjects setshowAddSubject={setshowAddSubject} />} />
+          <Route path="classroom" element={<ClassRoom setshowAddClassroom={setshowAddClassroom} />} />
+          <Route path="timetable" element={<TimeTables setshowAddTimeTable={setshowAddTimeTable} />} />
           <Route path="reports" element={<Reports />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="settings" element={<Settings />} />

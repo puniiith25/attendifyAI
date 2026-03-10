@@ -52,7 +52,7 @@ export const createTeacher = async (req, res) => {
 
         }
 
-       
+
         // CREATE USER
 
         const hash = await bcrypt.hash(password, 10);
@@ -143,16 +143,22 @@ export const getTeachers = async (req, res) => {
         }
 
         const result = await pool.query(
-            `SELECT 
-                t.id AS teacher_id,
-                t.employee_number,
-                t.department,
-                t.phone,
-                u.name,
-                u.email
-            FROM teachers t
-            JOIN users u ON t.user_id = u.id
-            ORDER BY t.id ASC`
+            `SELECT
+            t.id AS teacher_id,
+            t.employee_number,
+            t.department,
+            t.phone,
+            u.name,
+            u.email,
+            COALESCE(
+                ARRAY_AGG(s.sec_name) FILTER (WHERE s.sec_name IS NOT NULL),
+                '{}'
+            ) AS section
+        FROM teachers t
+        JOIN users u ON t.user_id = u.id
+        LEFT JOIN sections s ON s.class_teacher = t.id
+        GROUP BY t.id, u.name, u.email
+        ORDER BY t.id ASC;`
         );
 
         res.json({
@@ -165,7 +171,7 @@ export const getTeachers = async (req, res) => {
 
         res.status(500).json({
             success: false,
-            message: "Internal server error"
+            message: error.message
         });
 
     }
@@ -215,7 +221,7 @@ export const getTeacherById = async (req, res) => {
 
         res.status(500).json({
             success: false,
-            message: "Internal server error"
+            message: message.error
         });
 
     }

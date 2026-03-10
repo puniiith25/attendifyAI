@@ -1,10 +1,8 @@
 import { ChevronDown, X } from 'lucide-react'
-import React, { useContext, useState } from 'react'
+import React, { useState } from 'react'
 import axios from "axios"
-import { AppContext } from '../Context/AppContext';
 
 const AddStudents = ({ setshowAddStudent }) => {
-    const { sections } = useContext(AppContext);
 
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
@@ -65,7 +63,7 @@ const AddStudents = ({ setshowAddStudent }) => {
             }
 
             const res = await axios.post(
-                "http://localhost:5000/api/students/create-student",
+                "http://localhost:8000/api/v1/students/create-student",
                 formData,
                 {
                     headers: {
@@ -245,8 +243,8 @@ const AddStudents = ({ setshowAddStudent }) => {
 
                         <option value="">Select</option>
 
-                        {sections.map((item, index) => (
-                            <option key={item.section_id} value={item.section_id}>{item.sec_name}</option>
+                        {sections_list.map((item, index) => (
+                            <option key={index} value={item}>{item}</option>
                         ))}
 
                     </select>

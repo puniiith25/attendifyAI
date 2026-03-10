@@ -1,12 +1,14 @@
 import React from "react";
 import axios from 'axios'
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Bell, Calendar, ChartColumnDecreasing, Clock, GraduationCap, Home, LogOut, Settings, Users } from 'lucide-react'
+import { Bell, BookOpen, Calendar, ChartColumnDecreasing, Clock, GraduationCap, Home, HomeIcon, LogOut, LucideHome, Settings, Users } from 'lucide-react'
 const SideBarItems = [
     { to: '/', label: 'DashBoard', Icon: Home },
     { to: '/students', label: 'Students', Icon: Users },
     { to: '/teachers', label: 'Teachers', Icon: GraduationCap },
     { to: '/sections', label: 'Sections', Icon: Calendar },
+    { to: '/subjects', label: 'Subjects', Icon: BookOpen },
+    { to: '/classroom', label: 'ClassRoom', Icon: LucideHome },
     { to: '/timetable', label: 'Timetable', Icon: Clock },
     { to: '/reports', label: 'Reports', Icon: ChartColumnDecreasing },
     { to: '/notifications', label: 'Notifications', Icon: Bell },
