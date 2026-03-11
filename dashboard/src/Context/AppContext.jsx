@@ -9,10 +9,11 @@ const AppContextProvider = ({ children }) => {
     const [teachers, setTeachers] = useState([]);
     const [sections, setSections] = useState([]);
     const [subjects, setSubjects] = useState([]);
-    const [classRooms, setClassRooms] = useState([]);
+    const [classrooms, setClassrooms] = useState([]);
     const [timetable, setTimetable] = useState([]);
 
     const backendUrl = "http://localhost:8000/api/v1";
+
 
     /* =============================
        GET STUDENTS
@@ -124,7 +125,7 @@ const AppContextProvider = ({ children }) => {
             );
 
             if (res.data.success) {
-                setClassRooms(res.data.classRooms);
+                setClassrooms(res.data.classrooms);
             }
 
         } catch (error) {
@@ -159,7 +160,7 @@ const AppContextProvider = ({ children }) => {
 
 
     /* =============================
-       LOAD DATA ON START
+       LOAD DATA
     ============================= */
 
     useEffect(() => {
@@ -180,7 +181,7 @@ const AppContextProvider = ({ children }) => {
         teachers,
         sections,
         subjects,
-        classRooms,
+        classrooms,
         timetable,
 
         getStudents,

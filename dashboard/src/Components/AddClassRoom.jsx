@@ -1,7 +1,11 @@
 import { ChevronDown, X } from "lucide-react"
-import React, { useState } from "react"
+import React, { useState, useContext } from "react"
+import axios from "axios"
+import { AppContext } from "../Context/AppContext"
 
 const AddClassRoom = ({ setshowAddClassroom }) => {
+
+    const { getClassRooms } = useContext(AppContext)
 
     const [roomNo, setRoomNo] = useState("")
     const [building, setBuilding] = useState("")
@@ -14,11 +18,60 @@ const AddClassRoom = ({ setshowAddClassroom }) => {
         "Lab Block"
     ]
 
+    const handleSubmit = async () => {
+
+        if (!roomNo || !building || !capacity) {
+            alert("All fields required")
+            return
+        }
+
+        try {
+
+            const res = await axios.post(
+                "http://localhost:8000/api/v1/classrooms/create-classroom",
+                {
+                    room_number: roomNo,
+                    building: building,
+                    capacity: parseInt(capacity)
+                },
+                {
+                    withCredentials: true
+                }
+            )
+
+            if (res.data.success) {
+
+                alert("Classroom Created Successfully")
+
+                getClassRooms()   // refresh classroom list
+
+                setshowAddClassroom(false)
+
+                setRoomNo("")
+                setBuilding("")
+                setCapacity("")
+            }
+
+        } catch (error) {
+
+            console.log(error)
+
+            alert(
+                error.response?.data?.message ||
+                "Failed to create classroom"
+            )
+
+        }
+
+    }
+
     return (
 
         <div className="absolute inset-0 z-90 w-full h-full backdrop-blur-md grid">
 
             <div className="place-self-center w-[500px] border bg-white rounded-2xl p-10">
+
+                {/* Header */}
 
                 <div className="flex justify-between">
 
@@ -123,6 +176,7 @@ const AddClassRoom = ({ setshowAddClassroom }) => {
                     </button>
 
                     <button
+                        onClick={handleSubmit}
                         className="bg-blue-950 text-white px-6 py-2 rounded-lg"
                     >
                         + Add Classroom

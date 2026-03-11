@@ -1,28 +1,16 @@
 import { Edit, Search, Trash2 } from "lucide-react"
-import React from "react"
+import React, { useContext, useState } from "react"
+import { AppContext } from "../../Context/AppContext"
 
 const ClassRoom = ({ setshowAddClassroom }) => {
 
-    const classrooms = [
-        {
-            id: 1,
-            room_no: "A101",
-            building: "Block A",
-            capacity: 60
-        },
-        {
-            id: 2,
-            room_no: "A102",
-            building: "Block A",
-            capacity: 60
-        },
-        {
-            id: 3,
-            room_no: "LAB1",
-            building: "Lab Block",
-            capacity: 40
-        }
-    ]
+    const { classrooms = [] } = useContext(AppContext);
+
+    const [search, setSearch] = useState("")
+
+    const filteredClassrooms = classrooms.filter((item) =>
+        item.room_number.toLowerCase().includes(search.toLowerCase())
+    )
 
     return (
 
@@ -48,13 +36,15 @@ const ClassRoom = ({ setshowAddClassroom }) => {
                     <input
                         type="text"
                         placeholder='Search classroom...'
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
                         className='ml-2 border-0 bg-transparent focus:outline-none'
                     />
 
                 </div>
 
 
-                <div className='border-0 rounded w-50 flex justify-center mt-4 bg-blue-950 text-white cursor-pointer'>
+                <div className='rounded w-50 flex justify-center mt-4 bg-blue-950 text-white cursor-pointer'>
 
                     <button
                         className='font-semibold'
@@ -71,7 +61,7 @@ const ClassRoom = ({ setshowAddClassroom }) => {
 
             {/* Table */}
 
-            <div className='border-2 border-gray-300 mt-15 p-4 rounded'>
+            <div className='border-2 border-gray-300 mt-10 p-4 rounded'>
 
                 <div className='grid grid-cols-[1fr_1fr_0.5fr_0.3fr_0.3fr] border-b-2 border-gray-400 p-2 ml-3 font-semibold text-[14px]'>
 
@@ -84,29 +74,37 @@ const ClassRoom = ({ setshowAddClassroom }) => {
                 </div>
 
 
+                {filteredClassrooms.length === 0 && (
 
-                {classrooms.map((room) => (
+                    <p className="text-gray-500 p-4 text-center">
+                        No classrooms found
+                    </p>
+
+                )}
+
+
+                {filteredClassrooms.map((item) => (
 
                     <div
-                        key={room.id}
+                        key={item.id}
                         className='grid grid-cols-[1fr_1fr_0.5fr_0.3fr_0.3fr] border-b text-gray-500 border-gray-300 m-4 items-center pb-2'
                     >
 
                         <p className='font-semibold text-[13px]'>
-                            {room.room_no}
+                            {item.room_number}
                         </p>
 
                         <p className='text-[13px]'>
-                            {room.building}
+                            {item.building}
                         </p>
 
                         <p className='text-[13px]'>
-                            {room.capacity}
+                            {item.capacity}
                         </p>
 
-                        <Edit className='cursor-pointer h-4 w-6' />
+                        <Edit className='cursor-pointer h-4 w-6 text-blue-600' />
 
-                        <Trash2 className='cursor-pointer h-4 w-6' />
+                        <Trash2 className='cursor-pointer h-4 w-6 text-red-600' />
 
                     </div>
 

@@ -1,7 +1,12 @@
 import { pool } from "../Database/db.js";
 
 
+/* =========================================
+CREATE TIMETABLE
+========================================= */
+
 export const createTimetable = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
@@ -16,25 +21,30 @@ export const createTimetable = async (req, res) => {
             subject_id,
             teacher_id,
             classroom_id,
-            semester,
-            academic_year,
             day_of_week,
             period_no,
             start_time,
-            end_time
+            end_time,
+            semester,
+            academic_year,
+            valid_from,
+            valid_to
         } = req.body;
+
 
         if (
             !section_id ||
             !subject_id ||
             !teacher_id ||
             !classroom_id ||
-            !semester ||
-            !academic_year ||
             !day_of_week ||
             !period_no ||
             !start_time ||
-            !end_time
+            !end_time ||
+            !semester ||
+            !academic_year ||
+            !valid_from ||
+            !valid_to
         ) {
             return res.status(400).json({
                 success: false,
@@ -42,45 +52,21 @@ export const createTimetable = async (req, res) => {
             });
         }
 
-        /* ========================
-        VALIDATION CHECKS
-        ======================== */
 
-        const section = await pool.query(
-            "SELECT id FROM sections WHERE id=$1",
-            [section_id]
-        );
-
-        const subject = await pool.query(
-            "SELECT id FROM subjects WHERE id=$1",
-            [subject_id]
-        );
-
-        const teacher = await pool.query(
-            "SELECT id FROM teachers WHERE id=$1",
-            [teacher_id]
-        );
-
-        const classroom = await pool.query(
-            "SELECT id FROM classrooms WHERE id=$1",
-            [classroom_id]
-        );
-
-        if (
-            section.rowCount === 0 ||
-            subject.rowCount === 0 ||
-            teacher.rowCount === 0 ||
-            classroom.rowCount === 0
-        ) {
-            return res.status(404).json({
+        if (new Date(valid_from) > new Date(valid_to)) {
+            return res.status(400).json({
                 success: false,
-                message: "Invalid section / subject / teacher / classroom"
+                message: "valid_from must be before valid_to"
             });
         }
 
-        /* ========================
-        SECTION CONFLICT
-        ======================== */
+        if (start_time >= end_time) {
+            return res.status(400).json({
+                success: false,
+                message: "Start time must be before end time"
+            });
+        }
+        /* SECTION CONFLICT */
 
         const sectionConflict = await pool.query(
             `SELECT id FROM timetable
@@ -99,83 +85,77 @@ export const createTimetable = async (req, res) => {
             });
         }
 
-        /* ========================
-        TEACHER CONFLICT
-        ======================== */
+
+        /* TEACHER CONFLICT */
 
         const teacherConflict = await pool.query(
             `SELECT id FROM timetable
              WHERE teacher_id=$1
-             AND semester=$2
-             AND academic_year=$3
-             AND day_of_week=$4
-             AND start_time < $5
-             AND end_time > $6`,
-            [teacher_id, semester, academic_year, day_of_week, end_time, start_time]
+             AND day_of_week=$2
+             AND start_time < $3
+             AND end_time > $4`,
+            [teacher_id, day_of_week, end_time, start_time]
         );
 
         if (teacherConflict.rowCount > 0) {
             return res.status(409).json({
                 success: false,
-                message: "Teacher already assigned during this time"
+                message: "Teacher already assigned in this time"
             });
         }
 
-        /* ========================
-        ROOM CONFLICT
-        ======================== */
+
+        /* ROOM CONFLICT */
 
         const roomConflict = await pool.query(
             `SELECT id FROM timetable
              WHERE classroom_id=$1
-             AND semester=$2
-             AND academic_year=$3
-             AND day_of_week=$4
-             AND start_time < $5
-             AND end_time > $6`,
-            [classroom_id, semester, academic_year, day_of_week, end_time, start_time]
+             AND day_of_week=$2
+             AND start_time < $3
+             AND end_time > $4`,
+            [classroom_id, day_of_week, end_time, start_time]
         );
 
         if (roomConflict.rowCount > 0) {
             return res.status(409).json({
                 success: false,
-                message: "Classroom already occupied during this time"
+                message: "Classroom already occupied"
             });
         }
 
-        /* ========================
-        INSERT TIMETABLE
-        ======================== */
 
         const result = await pool.query(
             `INSERT INTO timetable
             (section_id, subject_id, teacher_id, classroom_id,
-             semester, academic_year, day_of_week, period_no, start_time, end_time)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+             day_of_week, period_no, start_time, end_time,
+             semester, academic_year, valid_from, valid_to)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
             RETURNING *`,
             [
                 section_id,
                 subject_id,
                 teacher_id,
                 classroom_id,
-                semester,
-                academic_year,
                 day_of_week,
                 period_no,
                 start_time,
-                end_time
+                end_time,
+                semester,
+                academic_year,
+                valid_from,
+                valid_to
             ]
         );
 
         res.status(201).json({
             success: true,
-            message: "Timetable created successfully",
+            message: "Timetable created",
             timetable: result.rows[0]
         });
 
     } catch (error) {
 
-        console.error("CREATE TIMETABLE ERROR:", error);
+        console.error(error);
 
         res.status(500).json({
             success: false,
@@ -183,34 +163,35 @@ export const createTimetable = async (req, res) => {
         });
 
     }
+
 };
 
 
+
+/* =========================================
+GET ALL TIMETABLES (ADMIN)
+========================================= */
 
 export const getAllTimetables = async (req, res) => {
 
     try {
 
-        if (req.user.role !== "admin") {
-            return res.status(403).json({
-                success: false,
-                message: "Access denied"
-            });
-        }
-
         const result = await pool.query(`
         SELECT
             t.id,
+            t.section_id,
             s.sec_name AS section,
             sub.name AS subject,
             u.name AS teacher,
             c.room_number AS classroom,
-            t.semester,
-            t.academic_year,
             t.day_of_week,
             t.period_no,
             t.start_time,
-            t.end_time
+            t.end_time,
+            t.semester,
+            t.academic_year,
+            t.valid_from,
+            t.valid_to
         FROM timetable t
         JOIN sections s ON t.section_id = s.id
         JOIN subjects sub ON t.subject_id = sub.id
@@ -228,11 +209,10 @@ export const getAllTimetables = async (req, res) => {
 
     } catch (error) {
 
-        console.error("GET ALL TIMETABLE ERROR:", error);
+        console.error(error);
 
         res.status(500).json({
             success: false,
-
             message: error.message
         });
 
@@ -242,56 +222,38 @@ export const getAllTimetables = async (req, res) => {
 
 
 
-/* =====================================================
+/* =========================================
 GET TEACHER TIMETABLE
-===================================================== */
+========================================= */
 
 export const getTeacherTimetable = async (req, res) => {
 
     try {
-
-        if (req.user.role !== "teacher") {
-            return res.status(403).json({
-                success: false,
-                message: "Access denied"
-            });
-        }
 
         const teacher = await pool.query(
             "SELECT id FROM teachers WHERE user_id=$1",
             [req.user.id]
         );
 
-        if (teacher.rowCount === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Teacher not found"
-            });
-        }
-
         const teacher_id = teacher.rows[0].id;
 
-        const result = await pool.query(`
-SELECT
-    t.id,
-    s.sec_name AS section,
-    sub.name AS subject,
-    u.name AS teacher,
-    c.room_number AS classroom,
-    t.semester,
-    t.academic_year,
-    t.day_of_week,
-    t.period_no,
-    t.start_time,
-    t.end_time
-FROM timetable t
-LEFT JOIN sections s ON t.section_id = s.id
-LEFT JOIN subjects sub ON t.subject_id = sub.id
-LEFT JOIN teachers te ON t.teacher_id = te.id
-LEFT JOIN users u ON te.user_id = u.id
-LEFT JOIN classrooms c ON t.classroom_id = c.id
-ORDER BY s.sec_name, t.day_of_week, t.period_no
-`);
+        const result = await pool.query(
+            `SELECT
+            sub.name AS subject,
+            s.sec_name AS section,
+            c.room_number AS classroom,
+            t.day_of_week,
+            t.period_no,
+            t.start_time,
+            t.end_time
+            FROM timetable t
+            JOIN subjects sub ON t.subject_id=sub.id
+            JOIN sections s ON t.section_id=s.id
+            JOIN classrooms c ON t.classroom_id=c.id
+            WHERE t.teacher_id=$1
+            ORDER BY t.day_of_week, t.period_no`,
+            [teacher_id]
+        );
 
         res.json({
             success: true,
@@ -300,7 +262,7 @@ ORDER BY s.sec_name, t.day_of_week, t.period_no
 
     } catch (error) {
 
-        console.error("TEACHER TIMETABLE ERROR:", error);
+        console.error(error);
 
         res.status(500).json({
             success: false,
@@ -313,54 +275,39 @@ ORDER BY s.sec_name, t.day_of_week, t.period_no
 
 
 
-/* =====================================================
+/* =========================================
 GET STUDENT TIMETABLE
-===================================================== */
+========================================= */
 
 export const getStudentTimetable = async (req, res) => {
 
     try {
-
-        if (req.user.role !== "student") {
-            return res.status(403).json({
-                success: false,
-                message: "Access denied"
-            });
-        }
 
         const student = await pool.query(
             "SELECT section_id FROM students WHERE user_id=$1",
             [req.user.id]
         );
 
-        if (student.rowCount === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
-        }
-
         const section_id = student.rows[0].section_id;
 
-        const result = await pool.query(`
-        SELECT
+        const result = await pool.query(
+            `SELECT
             sub.name AS subject,
             u.name AS teacher,
             c.room_number AS classroom,
-            t.semester,
-            t.academic_year,
             t.day_of_week,
             t.period_no,
             t.start_time,
             t.end_time
-        FROM timetable t
-        JOIN subjects sub ON t.subject_id = sub.id
-        JOIN teachers te ON t.teacher_id = te.id
-        JOIN users u ON te.user_id = u.id
-        JOIN classrooms c ON t.classroom_id = c.id
-        WHERE t.section_id=$1
-        ORDER BY t.day_of_week, t.period_no
-        `, [section_id]);
+            FROM timetable t
+            JOIN subjects sub ON t.subject_id=sub.id
+            JOIN teachers te ON t.teacher_id=te.id
+            JOIN users u ON te.user_id=u.id
+            JOIN classrooms c ON t.classroom_id=c.id
+            WHERE t.section_id=$1
+            ORDER BY t.day_of_week, t.period_no`,
+            [section_id]
+        );
 
         res.json({
             success: true,
@@ -369,7 +316,7 @@ export const getStudentTimetable = async (req, res) => {
 
     } catch (error) {
 
-        console.error("STUDENT TIMETABLE ERROR:", error);
+        console.error(error);
 
         res.status(500).json({
             success: false,
@@ -381,62 +328,14 @@ export const getStudentTimetable = async (req, res) => {
 };
 
 
-/* =====================================================
-DELETE TIMETABLE
-===================================================== */
 
-export const deleteTimetable = async (req, res) => {
-    try {
-
-        if (req.user.role !== "admin") {
-            return res.status(403).json({
-                success: false,
-                message: "Only admin can delete timetable"
-            });
-        }
-
-        const { id } = req.params;
-
-        const result = await pool.query(
-            "DELETE FROM timetable WHERE id=$1 RETURNING id",
-            [id]
-        );
-
-        if (result.rowCount === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Timetable not found"
-            });
-        }
-
-        res.json({
-            success: true,
-            message: "Timetable deleted"
-        });
-
-    } catch (error) {
-
-        console.error("DELETE TIMETABLE ERROR:", error);
-
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-
-    }
-};
-
+/* =========================================
+UPDATE TIMETABLE
+========================================= */
 
 export const updateTimetable = async (req, res) => {
 
     try {
-
-        if (req.user.role !== "admin") {
-            return res.status(403).json({
-                success: false,
-                message: "Only admin can update timetable"
-            });
-        }
 
         const { id } = req.params;
 
@@ -445,141 +344,94 @@ export const updateTimetable = async (req, res) => {
             subject_id,
             teacher_id,
             classroom_id,
-            semester,
-            academic_year,
             day_of_week,
             period_no,
             start_time,
-            end_time
+            end_time,
+            semester,
+            academic_year,
+            valid_from,
+            valid_to
         } = req.body;
-
-        /* ========================
-        CHECK TIMETABLE EXISTS
-        ======================== */
-
-        const timetable = await pool.query(
-            "SELECT id FROM timetable WHERE id=$1",
-            [id]
-        );
-
-        if (timetable.rowCount === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Timetable not found"
-            });
-        }
-
-        /* ========================
-        SECTION CONFLICT
-        ======================== */
-
-        const sectionConflict = await pool.query(
-            `SELECT id FROM timetable
-             WHERE section_id=$1
-             AND semester=$2
-             AND academic_year=$3
-             AND day_of_week=$4
-             AND period_no=$5
-             AND id<>$6`,
-            [section_id, semester, academic_year, day_of_week, period_no, id]
-        );
-
-        if (sectionConflict.rowCount > 0) {
-            return res.status(409).json({
-                success: false,
-                message: "Section already has class in this period"
-            });
-        }
-
-        /* ========================
-        TEACHER CONFLICT
-        ======================== */
-
-        const teacherConflict = await pool.query(
-            `SELECT id FROM timetable
-             WHERE teacher_id=$1
-             AND semester=$2
-             AND academic_year=$3
-             AND day_of_week=$4
-             AND start_time < $5
-             AND end_time > $6
-             AND id<>$7`,
-            [teacher_id, semester, academic_year, day_of_week, end_time, start_time, id]
-        );
-
-        if (teacherConflict.rowCount > 0) {
-            return res.status(409).json({
-                success: false,
-                message: "Teacher already assigned during this time"
-            });
-        }
-
-        /* ========================
-        CLASSROOM CONFLICT
-        ======================== */
-
-        const roomConflict = await pool.query(
-            `SELECT id FROM timetable
-             WHERE classroom_id=$1
-             AND semester=$2
-             AND academic_year=$3
-             AND day_of_week=$4
-             AND start_time < $5
-             AND end_time > $6
-             AND id<>$7`,
-            [classroom_id, semester, academic_year, day_of_week, end_time, start_time, id]
-        );
-
-        if (roomConflict.rowCount > 0) {
-            return res.status(409).json({
-                success: false,
-                message: "Classroom already occupied during this time"
-            });
-        }
-
-        /* ========================
-        UPDATE TIMETABLE
-        ======================== */
 
         const result = await pool.query(
             `UPDATE timetable
             SET
-                section_id=$1,
-                subject_id=$2,
-                teacher_id=$3,
-                classroom_id=$4,
-                semester=$5,
-                academic_year=$6,
-                day_of_week=$7,
-                period_no=$8,
-                start_time=$9,
-                end_time=$10
-            WHERE id=$11
+            section_id=$1,
+            subject_id=$2,
+            teacher_id=$3,
+            classroom_id=$4,
+            day_of_week=$5,
+            period_no=$6,
+            start_time=$7,
+            end_time=$8,
+            semester=$9,
+            academic_year=$10,
+            valid_from=$11,
+            valid_to=$12
+            WHERE id=$13
             RETURNING *`,
             [
                 section_id,
                 subject_id,
                 teacher_id,
                 classroom_id,
-                semester,
-                academic_year,
                 day_of_week,
                 period_no,
                 start_time,
                 end_time,
+                semester,
+                academic_year,
+                valid_from,
+                valid_to,
                 id
             ]
         );
 
         res.json({
             success: true,
-            message: "Timetable updated successfully",
+            message: "Timetable updated",
             timetable: result.rows[0]
         });
 
     } catch (error) {
 
-        console.error("UPDATE TIMETABLE ERROR:", error);
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+
+    }
+
+};
+
+
+
+/* =========================================
+DELETE TIMETABLE
+========================================= */
+
+export const deleteTimetable = async (req, res) => {
+
+    try {
+
+        const { id } = req.params;
+
+        await pool.query(
+            "DELETE FROM timetable WHERE id=$1",
+            [id]
+        );
+
+        res.json({
+            success: true,
+            message: "Timetable deleted"
+        });
+
+    } catch (error) {
+
+        console.error(error);
 
         res.status(500).json({
             success: false,
