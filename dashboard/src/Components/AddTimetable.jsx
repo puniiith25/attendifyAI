@@ -99,7 +99,7 @@ const AddTimeTable = ({ setshowAddTimeTable }) => {
 
     return (
 
-        <div className="absolute inset-0 z-50 backdrop-blur-md flex items-center justify-center">
+        <div className="absolute inset-0 z-100 backdrop-blur-md flex items-center justify-center">
 
             <div className="w-[550px] bg-white rounded-2xl p-8">
 
@@ -230,77 +230,94 @@ const AddTimeTable = ({ setshowAddTimeTable }) => {
 
                 {/* SEMESTER */}
 
-                <label className="font-semibold">Semester</label>
+                <div className="flex gap-4 mt-4 ">
+                    <div>
+                        <label className="font-semibold">Semester</label>
 
-                <select
-                    value={semester}
-                    onChange={(e) => setSemester(e.target.value)}
-                    className="bg-gray-200 p-3 rounded w-full mb-3"
-                >
-                    <option value="">Select Semester</option>
+                        <select
+                            value={semester}
+                            onChange={(e) => setSemester(e.target.value)}
+                            className="bg-gray-200 p-3 rounded w-60 mb-3"
+                        >
+                            <option value="">Select Semester</option>
 
-                    {semesters.map((sem) => (
-                        <option key={sem} value={sem}>
-                            {sem}
-                        </option>
-                    ))}
-                </select>
+                            {semesters.map((sem) => (
+                                <option key={sem} value={sem}>
+                                    {sem}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
 
-                {/* ACADEMIC YEAR */}
+                    {/* ACADEMIC YEAR */}
 
-                <label className="font-semibold">Academic Year</label>
+                    <div>
+                        <label className="font-semibold">Academic Year</label>
 
-                <input
-                    type="text"
-                    placeholder="2025-2026"
-                    value={academicYear}
-                    onChange={(e) => setAcademicYear(e.target.value)}
-                    className="bg-gray-200 p-3 rounded w-full mb-3"
-                />
+                        <input
+                            type="text"
+                            placeholder="2025-2026"
+                            value={academicYear}
+                            onChange={(e) => setAcademicYear(e.target.value)}
+                            className="bg-gray-200 p-3 rounded w-60 mb-3"
+                        />
+                    </div>
+                </div>
 
 
                 {/* VALID FROM */}
 
-                <label className="font-semibold">Valid From</label>
+                <div className="flex gap-4 mt-4">
+                    <div>
+                        <label className="font-semibold">Valid From</label>
 
-                <input
-                    type="date"
-                    value={validFrom}
-                    onChange={(e) => setValidFrom(e.target.value)}
-                    className="bg-gray-200 p-3 rounded w-full mb-3"
-                />
+                        <input
+                            type="date"
+                            value={validFrom}
+                            onChange={(e) => setValidFrom(e.target.value)}
+                            className="bg-gray-200 p-3 rounded w-60 mb-3"
+                        />
+
+                    </div>
+
+                    {/* VALID TO */}
+
+                    <div>
+                        <label className="font-semibold">Valid To</label>
+
+                        <input
+                            type="date"
+                            value={validTo}
+                            onChange={(e) => setValidTo(e.target.value)}
+                            className="bg-gray-200 p-3 rounded w-60 mb-3"
+                        />
+                    </div>
 
 
-                {/* VALID TO */}
-
-                <label className="font-semibold">Valid To</label>
-
-                <input
-                    type="date"
-                    value={validTo}
-                    onChange={(e) => setValidTo(e.target.value)}
-                    className="bg-gray-200 p-3 rounded w-full mb-3"
-                />
-
+                </div>
 
                 {/* TIME */}
 
                 <div className="flex gap-4 mt-4">
+                    <div>
+                        <label className="font-semibold">Start Time</label>
 
-                    <input
-                        type="time"
-                        value={startTime}
-                        onChange={(e) => setStartTime(e.target.value)}
-                        className="bg-gray-200 p-3 rounded w-full"
-                    />
+                        <input
+                            type="time"
+                            value={startTime}
+                            onChange={(e) => setStartTime(e.target.value)}
+                            className="bg-gray-200 p-3 rounded w-60"
+                        />
+                    </div>
+                    <div><label className="font-semibold">End Time</label>
 
-                    <input
-                        type="time"
-                        value={endTime}
-                        onChange={(e) => setEndTime(e.target.value)}
-                        className="bg-gray-200 p-3 rounded w-full"
-                    />
+                        <input
+                            type="time"
+                            value={endTime}
+                            onChange={(e) => setEndTime(e.target.value)}
+                            className="bg-gray-200 p-3 rounded w-60"
+                        /></div>
 
                 </div>
 
