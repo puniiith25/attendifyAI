@@ -3,8 +3,9 @@ import React, { useContext } from 'react'
 import { AppContext } from '../../Context/AppContext.jsx'
 
 const Subjects = ({ setshowAddSubject }) => {
+    const { subjects } = useContext(AppContext);
 
-    const subjects = [
+    const subjectss = [
 
         {
             id: 1,
@@ -92,9 +93,9 @@ const Subjects = ({ setshowAddSubject }) => {
                         className='grid grid-cols-[1fr_1fr_1fr_1fr_0.3fr_0.3fr] border-b text-gray-500 border-gray-300 m-4 items-center pb-2'
                     >
 
-                        <p className='font-semibold text-[13px]'>{item.subject_name}</p>
+                        <p className='font-semibold text-[13px]'>{item.name}</p>
 
-                        <p className='text-[13px]'>{item.subject_code}</p>
+                        <p className='text-[13px]'>{item.code}</p>
 
                         <p className='text-[13px]'>{item.department}</p>
 

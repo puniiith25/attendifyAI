@@ -2,272 +2,134 @@ import { ChevronDown, X } from 'lucide-react'
 import React, { useState } from 'react'
 import axios from "axios"
 
-const AddStudents = ({ setshowAddStudent }) => {
+const AddSubjects = ({ setshowAddSubject }) => {
 
     const [name, setName] = useState("")
-    const [email, setEmail] = useState("")
-    const [password, setPassword] = useState("")
-    const [roll, setRoll] = useState("")
-    const [phone, setPhone] = useState("")
-    const [year, setYear] = useState("")
-
-    const [branch, setBranch] = useState("")
+    const [code, setCode] = useState("")
+    const [department, setDepartment] = useState("")
     const [semester, setSemester] = useState("")
-    const [section, setSection] = useState("")
 
-    const [image, setImage] = useState(null)
-    const [preview, setPreview] = useState(null)
-
-    const sections_list = ['CSE-A', 'CSE-B', 'CSE-C', 'CSE-D', 'CSE-E']
-
-    const Semister_list = [
-        '1st Sem', '2nd Sem', '3rd Sem', '4th Sem',
-        '5th Sem', '6th Sem', '7th Sem', '8th Sem'
+    const departments = [
+        "CSE",
+        "ECE",
+        "ME",
+        "Civil",
+        "AI & DS"
     ]
 
-    const branches = [
-        'CSE', 'ECE', 'ME', 'Civil', 'AI & DS'
-    ]
-
-
-    const handleImageChange = (e) => {
-
-        const file = e.target.files[0]
-
-        if (file) {
-            setImage(file)
-            setPreview(URL.createObjectURL(file))
-        }
-
-    }
-
+    const semesters = [1, 2, 3, 4, 5, 6, 7, 8]
 
     const handleSubmit = async () => {
 
+        if (!name || !code || !department || !semester) {
+            alert("All fields required")
+            return
+        }
+
         try {
 
-            const formData = new FormData()
-
-            formData.append("name", name)
-            formData.append("email", email)
-            formData.append("password", password)
-            formData.append("roll_number", roll)
-            formData.append("phone", phone)
-            formData.append("admission_year", year)
-            formData.append("branch", branch)
-            formData.append("semester", semester)
-            formData.append("section", section)
-
-            if (image) {
-                formData.append("image", image)
-            }
-
             const res = await axios.post(
-                "http://localhost:8000/api/v1/students/create-student",
-                formData,
+                "http://localhost:8000/api/v1/subjects/create-subject",
                 {
-                    headers: {
-                        "Content-Type": "multipart/form-data"
-                    }
+                    name: name,
+                    code: code,
+                    department: department,
+                    semester: Number(semester)
+                },
+                {
+                    withCredentials: true
                 }
             )
 
             console.log(res.data)
 
-            setshowAddStudent(false)
+            if (res.data.success) {
+                alert("Subject Created Successfully")
+                setshowAddSubject(false)
+            }
 
-        } catch (err) {
+        } catch (error) {
 
-            console.error(err)
+            console.error(error)
+
+            alert(error.response?.data?.message || "Something went wrong")
 
         }
 
     }
 
-
     return (
 
         <div className='absolute inset-0 z-90 w-full h-full backdrop-blur-md grid'>
 
-            <div className='place-self-center w-140 border bg-white rounded-2xl p-8'>
+            <div className='place-self-center w-120 border bg-white rounded-2xl p-8'>
+
+                {/* Header */}
 
                 <div className='flex justify-between'>
 
-                    <div>
-                        <h1 className='font-semibold text-3xl text-blue-950'>
-                            Add New Student
-                        </h1>
-                    </div>
+                    <h1 className='font-semibold text-3xl text-blue-950'>
+                        Add New Subject
+                    </h1>
 
                     <X
-                        onClick={() => setshowAddStudent(false)}
+                        onClick={() => setshowAddSubject(false)}
                         className='cursor-pointer'
                     />
 
                 </div>
 
 
-                {/* Image Upload */}
+                {/* Subject Name */}
 
-                <div className='mt-6 flex items-center gap-4'>
+                <div className='mt-5'>
 
-                    <div className='w-16 h-16 rounded-full overflow-hidden border'>
-
-                        {preview ? (
-
-                            <img
-                                src={preview}
-                                className='w-full h-full object-cover'
-                            />
-
-                        ) : (
-
-                            <div className='w-full h-full bg-gray-200 flex items-center justify-center text-xs'>
-                                Photo
-                            </div>
-
-                        )}
-
-                    </div>
-
-                    <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageChange}
-                    />
-
-                </div>
-
-
-                {/* Name */}
-
-                <div className='mt-4'>
-
-                    <label className='text-sm font-semibold'>Name</label>
+                    <label className='text-sm font-semibold'>Subject Name</label>
 
                     <input
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        className='py-2 px-3 w-full rounded bg-gray-200 outline-none'
+                        placeholder='Data Structures'
                     />
 
                 </div>
 
 
-                {/* Email */}
+                {/* Subject Code */}
 
-                <div className='mt-3'>
+                <div className='mt-4'>
 
-                    <label className='text-sm font-semibold'>Email</label>
+                    <label className='text-sm font-semibold'>Subject Code</label>
 
                     <input
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        className='py-2 px-3 w-full rounded bg-gray-200 outline-none'
+                        placeholder='CS301'
                     />
 
                 </div>
 
 
-                {/* Password */}
+                {/* Department */}
 
-                <div className='mt-3'>
+                <div className='mt-4'>
 
-                    <label className='text-sm font-semibold'>Password</label>
-
-                    <input
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
-                    />
-
-                </div>
-
-
-                {/* Roll */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Roll Number</label>
-
-                    <input
-                        value={roll}
-                        onChange={(e) => setRoll(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
-                    />
-
-                </div>
-
-
-                {/* Phone */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Phone</label>
-
-                    <input
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
-                    />
-
-                </div>
-
-
-                {/* Admission */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Admission Year</label>
-
-                    <input
-                        value={year}
-                        onChange={(e) => setYear(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
-                    />
-
-                </div>
-
-
-                {/* Section */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Section</label>
+                    <label className='text-sm font-semibold'>Department</label>
 
                     <select
-                        value={section}
-                        onChange={(e) => setSection(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        className='py-2 px-3 w-full rounded bg-gray-200 outline-none'
                     >
 
-                        <option value="">Select</option>
+                        <option value="">Select Department</option>
 
-                        {sections_list.map((item, index) => (
-                            <option key={index} value={item}>{item}</option>
-                        ))}
-
-                    </select>
-
-                </div>
-
-
-                {/* Branch */}
-
-                <div className='mt-3'>
-
-                    <label className='text-sm font-semibold'>Branch</label>
-
-                    <select
-                        value={branch}
-                        onChange={(e) => setBranch(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
-                    >
-
-                        <option value="">Select</option>
-
-                        {branches.map((item, index) => (
-                            <option key={index} value={item}>{item}</option>
+                        {departments.map((item, index) => (
+                            <option key={index} value={item}>
+                                {item}
+                            </option>
                         ))}
 
                     </select>
@@ -277,20 +139,22 @@ const AddStudents = ({ setshowAddStudent }) => {
 
                 {/* Semester */}
 
-                <div className='mt-3'>
+                <div className='mt-4'>
 
                     <label className='text-sm font-semibold'>Semester</label>
 
                     <select
                         value={semester}
                         onChange={(e) => setSemester(e.target.value)}
-                        className='py-2 px-3 w-full rounded bg-gray-200'
+                        className='py-2 px-3 w-full rounded bg-gray-200 outline-none'
                     >
 
-                        <option value="">Select</option>
+                        <option value="">Select Semester</option>
 
-                        {Semister_list.map((item, index) => (
-                            <option key={index} value={item}>{item}</option>
+                        {semesters.map((item) => (
+                            <option key={item} value={item}>
+                                {item}
+                            </option>
                         ))}
 
                     </select>
@@ -304,7 +168,7 @@ const AddStudents = ({ setshowAddStudent }) => {
 
                     <button
                         className='bg-gray-200 px-6 py-2 rounded'
-                        onClick={() => setshowAddStudent(false)}
+                        onClick={() => setshowAddSubject(false)}
                     >
                         Cancel
                     </button>
@@ -313,7 +177,7 @@ const AddStudents = ({ setshowAddStudent }) => {
                         onClick={handleSubmit}
                         className='bg-blue-950 text-white px-6 py-2 rounded'
                     >
-                        + Add Student
+                        + Add Subject
                     </button>
 
                 </div>
@@ -324,4 +188,4 @@ const AddStudents = ({ setshowAddStudent }) => {
     )
 }
 
-export default AddStudents
+export default AddSubjects
