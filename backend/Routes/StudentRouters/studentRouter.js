@@ -13,7 +13,7 @@ studentRouter.get("/get-student/:id", verifyToken, getStudentById);
 
 studentRouter.get("/my-student", verifyToken, getLoggedStudent);
 
-studentRouter.put("/update-student/:id", verifyToken, updateStudent);
+studentRouter.put("/update-student/:id", verifyToken, upload.single("image"), updateStudent);
 
 studentRouter.delete("/delete-student/:id", verifyToken, deleteStudent);
 

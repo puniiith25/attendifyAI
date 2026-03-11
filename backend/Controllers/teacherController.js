@@ -1,5 +1,7 @@
+
 import bcrypt from "bcrypt";
 import { pool } from "../Database/db.js";
+import { supabase } from "../config/supabase.js";
 
 export const createTeacher = async (req, res) => {
 
@@ -30,11 +32,11 @@ export const createTeacher = async (req, res) => {
             });
         }
 
-        // START TRANSACTION
-
         await client.query("BEGIN");
 
-        // EMAIL CHECK
+        /* ========================
+        EMAIL CHECK
+        ======================== */
 
         const emailCheck = await client.query(
             "SELECT id FROM users WHERE email=$1",
@@ -52,15 +54,42 @@ export const createTeacher = async (req, res) => {
 
         }
 
+        /* ========================
+        UPLOAD IMAGE TO SUPABASE
+        ======================== */
 
-        // CREATE USER
+
+
+        let image_url = null;
+
+        if (req.file) {
+
+            const fileName = `teachers/${Date.now()}-${req.file.originalname}`;
+
+            const { error } = await supabase.storage
+                .from("teacher-images")
+                .upload(fileName, req.file.buffer, {
+                    contentType: req.file.mimetype
+                });
+
+            if (error) throw error;
+
+            const { data } = supabase.storage
+                .from("teacher-images")
+                .getPublicUrl(fileName);
+
+            image_url = data.publicUrl;
+        }
+        /* ========================
+        CREATE USER
+        ======================== */
 
         const hash = await bcrypt.hash(password, 10);
 
         const userResult = await client.query(
             `INSERT INTO users(name,email,password_hash,role)
-VALUES($1,$2,$3,'teacher')
-RETURNING id`,
+            VALUES($1,$2,$3,'teacher')
+            RETURNING id`,
             [name, email, hash]
         );
 
@@ -92,20 +121,17 @@ RETURNING id`,
 
         const teacherResult = await client.query(
             `INSERT INTO teachers
-(user_id,employee_number,department,phone)
-VALUES($1,$2,$3,$4)
-RETURNING *`,
+            (user_id,employee_number,department,phone,image_url)
+            VALUES($1,$2,$3,$4,$5)
+            RETURNING *`,
             [
                 userId,
                 employee_number,
                 department,
-                phone
+                phone,
+                image_url
             ]
         );
-
-        /* ========================
-        COMMIT
-        ======================== */
 
         await client.query("COMMIT");
 
@@ -132,7 +158,14 @@ RETURNING *`,
 
 };
 
+
+
+/* =====================================================
+GET ALL TEACHERS
+===================================================== */
+
 export const getTeachers = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
@@ -144,21 +177,22 @@ export const getTeachers = async (req, res) => {
 
         const result = await pool.query(
             `SELECT
-            t.id AS teacher_id,
-            t.employee_number,
-            t.department,
-            t.phone,
-            u.name,
-            u.email,
-            COALESCE(
-                ARRAY_AGG(s.sec_name) FILTER (WHERE s.sec_name IS NOT NULL),
-                '{}'
-            ) AS section
-        FROM teachers t
-        JOIN users u ON t.user_id = u.id
-        LEFT JOIN sections s ON s.class_teacher = t.id
-        GROUP BY t.id, u.name, u.email
-        ORDER BY t.id ASC;`
+                t.id AS teacher_id,
+                t.employee_number,
+                t.department,
+                t.phone,
+                t.image_url,
+                u.name,
+                u.email,
+                COALESCE(
+                    ARRAY_AGG(s.sec_name) FILTER (WHERE s.sec_name IS NOT NULL),
+                    '{}'
+                ) AS section
+            FROM teachers t
+            JOIN users u ON t.user_id = u.id
+            LEFT JOIN sections s ON s.class_teacher = t.id
+            GROUP BY t.id, u.name, u.email
+            ORDER BY t.id ASC`
         );
 
         res.json({
@@ -175,11 +209,17 @@ export const getTeachers = async (req, res) => {
         });
 
     }
+
 };
 
 
 
+/* =====================================================
+GET TEACHER BY ID
+===================================================== */
+
 export const getTeacherById = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
@@ -197,6 +237,7 @@ export const getTeacherById = async (req, res) => {
                 t.employee_number,
                 t.department,
                 t.phone,
+                t.image_url,
                 u.name,
                 u.email
             FROM teachers t
@@ -221,15 +262,21 @@ export const getTeacherById = async (req, res) => {
 
         res.status(500).json({
             success: false,
-            message: message.error
+            message: error.message
         });
 
     }
+
 };
 
 
 
+/* =====================================================
+GET LOGGED TEACHER
+===================================================== */
+
 export const getLoggedTeacher = async (req, res) => {
+
     try {
 
         if (req.user.role !== "teacher") {
@@ -245,6 +292,7 @@ export const getLoggedTeacher = async (req, res) => {
                 t.employee_number,
                 t.department,
                 t.phone,
+                t.image_url,
                 u.name,
                 u.email,
                 u.role
@@ -274,11 +322,17 @@ export const getLoggedTeacher = async (req, res) => {
         });
 
     }
+
 };
 
 
 
+/* =====================================================
+UPDATE TEACHER
+===================================================== */
+
 export const updateTeacher = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
@@ -289,7 +343,7 @@ export const updateTeacher = async (req, res) => {
         }
 
         const { id } = req.params;
-        const { employee_number, department, phone } = req.body;
+        const { employee_number, department, phone, image_url } = req.body;
 
         const teacher = await pool.query(
             "SELECT * FROM teachers WHERE id=$1",
@@ -316,19 +370,22 @@ export const updateTeacher = async (req, res) => {
                     message: "Employee number already exists"
                 });
             }
+
         }
 
         const result = await pool.query(
             `UPDATE teachers
              SET employee_number=$1,
                  department=$2,
-                 phone=$3
-             WHERE id=$4
+                 phone=$3,
+                 image_url=$4
+             WHERE id=$5
              RETURNING *`,
             [
                 employee_number || teacher.rows[0].employee_number,
                 department || teacher.rows[0].department,
                 phone || teacher.rows[0].phone,
+                image_url || teacher.rows[0].image_url,
                 id
             ]
         );
@@ -347,11 +404,17 @@ export const updateTeacher = async (req, res) => {
         });
 
     }
+
 };
 
 
 
+/* =====================================================
+DELETE TEACHER
+===================================================== */
+
 export const deleteTeacher = async (req, res) => {
+
     try {
 
         if (req.user.role !== "admin") {
@@ -388,4 +451,5 @@ export const deleteTeacher = async (req, res) => {
         });
 
     }
+
 };
