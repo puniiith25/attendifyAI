@@ -103,6 +103,12 @@ GET ALL SECTIONS
 export const getSections = async (req, res) => {
 
     try {
+        if (req.user.role !== "admin") {
+            return res.status(403).json({
+                success: false,
+                message: "Only admin can sections"
+            });
+        }
 
         const result = await pool.query(`
             SELECT

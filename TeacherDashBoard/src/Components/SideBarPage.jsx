@@ -4,12 +4,12 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import { Bell, BookOpen, Calendar, ChartColumnDecreasing, Clock, GraduationCap, Home, HomeIcon, LogOut, LucideHome, Settings, Users } from 'lucide-react'
 const SideBarItems = [
     { to: '/', label: 'DashBoard', Icon: Home },
-    { to: '/attendance', label: 'Teachers', Icon: GraduationCap },
-    { to: '/timetable', label: 'Sections', Icon: Calendar },
+    { to: '/attendance', label: 'Attendance', Icon: GraduationCap },
+    { to: '/timetable', label: 'Timetable', Icon: Calendar },
     { to: '/reports', label: 'Reports', Icon: ChartColumnDecreasing },
     { to: '/notifications', label: 'Notifications', Icon: Bell },
     { to: '/settings', label: 'Settings', Icon: Settings }
-    
+
 ]
 
 function SidebarPage() {
