@@ -1,45 +1,31 @@
-
-
-import React, { useState, useContext, useMemo } from "react"
+import React, { useContext, useMemo } from "react"
 import FullCalendar from "@fullcalendar/react"
 import dayGridPlugin from "@fullcalendar/daygrid"
 import timeGridPlugin from "@fullcalendar/timegrid"
 import interactionPlugin from "@fullcalendar/interaction"
 import { T_AppContext } from "../Context/T_AppContex"
 
+const T_TimetablePage = () => {
 
-const T_TimetablePage = ({ setshowAddTimeTable }) => {
-
-    const { timetable, sections } = useContext(T_AppContext)
-
-    const [section, setSection] = useState("")
-
+    const { timetable } = useContext(T_AppContext)
 
     const events = useMemo(() => {
 
-        if (!section) return []
-
-        const filtered = timetable.filter(
-            t => t.section_id === Number(section)
-        )
-
         const allEvents = []
 
-        filtered.forEach(t => {
+        timetable.forEach((t) => {
 
-            const start = new Date(t.valid_from)
+            const startDate = new Date(t.valid_from)
+            const endDate = new Date(t.valid_to)
 
-            // If valid_to is null → show only next 90 days
-            const end = t.valid_to
-                ? new Date(t.valid_to)
-                : new Date(new Date().setDate(new Date().getDate() + 90))
+            for (
+                let d = new Date(startDate);
+                d <= endDate;
+                d.setDate(d.getDate() + 1)
+            ) {
 
-            // Convert DB weekday (1-6) → JS weekday
-            const targetDay = t.day_of_week
-
-            for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-
-                if (d.getDay() === targetDay) {
+                // match weekday
+                if (d.getDay() === t.day_of_week) {
 
                     const dateStr = d.toISOString().split("T")[0]
 
@@ -47,14 +33,14 @@ const T_TimetablePage = ({ setshowAddTimeTable }) => {
 
                         id: `${t.id}-${dateStr}`,
 
-                        title: t.subject,
+                        title: `${t.subject} (${t.section})`,
 
                         start: `${dateStr}T${t.start_time}`,
                         end: `${dateStr}T${t.end_time}`,
 
                         extendedProps: {
-                            teacher: t.teacher,
-                            classroom: t.classroom
+                            classroom: t.classroom,
+                            period: t.period_no
                         }
 
                     })
@@ -67,66 +53,16 @@ const T_TimetablePage = ({ setshowAddTimeTable }) => {
 
         return allEvents
 
-    }, [section, timetable])
+    }, [timetable])
 
 
     return (
 
         <div className="p-6 border rounded">
 
-            {/* HEADER */}
-
-            <div className='flex justify-between mb-10 mt-5'>
-
-                <div>
-
-                    <h1 className='font-semibold text-2xl'>
-                        Time Tables Management
-                    </h1>
-
-                    <p className='text-gray-500'>
-                        Manage Time Tables and academic information
-                    </p>
-
-                </div>
-
-                <div className='rounded w-50 flex justify-center mt-4 p-4 bg-blue-950 text-white cursor-pointer'>
-
-                    <button
-                        type="button"
-                        className='font-semibold'
-                        onClick={() => setshowAddTimeTable(true)}
-                    >
-                        + Add Timetable
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            {/* SECTION FILTER */}
-
-            <select
-                value={section}
-                onChange={(e) => setSection(e.target.value)}
-                className="border p-2 mb-4 rounded"
-            >
-
-                <option value="">Select Section</option>
-
-                {sections.map(sec => (
-
-                    <option key={sec.id} value={sec.id}>
-                        {sec.sec_name}
-                    </option>
-
-                ))}
-
-            </select>
-
-
-            {/* CALENDAR */}
+            <h1 className="text-2xl font-semibold mb-6">
+                My Teaching Timetable
+            </h1>
 
             <FullCalendar
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
@@ -154,18 +90,18 @@ const T_TimetablePage = ({ setshowAddTimeTable }) => {
 
                 eventContent={(eventInfo) => {
 
-                    const { teacher, classroom } = eventInfo.event.extendedProps
+                    const { classroom, period } = eventInfo.event.extendedProps
 
                     return (
 
-                        <div className="text-[11px] leading-tight">
+                        <div className="text-xs">
 
                             <div className="font-semibold">
                                 {eventInfo.event.title}
                             </div>
 
                             <div>
-                                {teacher}
+                                Period {period}
                             </div>
 
                             <div>
@@ -177,7 +113,6 @@ const T_TimetablePage = ({ setshowAddTimeTable }) => {
                     )
 
                 }}
-
             />
 
         </div>

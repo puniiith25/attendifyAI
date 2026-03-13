@@ -5,9 +5,16 @@ import { pool } from "../Database/db.js";
 CREATE TIMETABLE
 ========================================= */
 
+
 export const createTimetable = async (req, res) => {
 
+    const client = await pool.connect();
+
     try {
+
+        /* ================================
+        ROLE AUTHORIZATION
+        ================================ */
 
         if (req.user.role !== "admin") {
             return res.status(403).json({
@@ -31,14 +38,17 @@ export const createTimetable = async (req, res) => {
             valid_to
         } = req.body;
 
+        /* ================================
+        REQUIRED FIELD VALIDATION
+        ================================ */
 
         if (
-            !section_id ||
-            !subject_id ||
-            !teacher_id ||
-            !classroom_id ||
-            !day_of_week ||
-            !period_no ||
+            section_id == null ||
+            subject_id == null ||
+            teacher_id == null ||
+            classroom_id == null ||
+            day_of_week == null ||
+            period_no == null ||
             !start_time ||
             !end_time ||
             !semester ||
@@ -52,6 +62,31 @@ export const createTimetable = async (req, res) => {
             });
         }
 
+        /* ================================
+        DAY VALIDATION
+        ================================ */
+
+        if (day_of_week < 0 || day_of_week > 6) {
+            return res.status(400).json({
+                success: false,
+                message: "day_of_week must be between 0 and 6"
+            });
+        }
+
+        /* ================================
+        PERIOD VALIDATION
+        ================================ */
+
+        if (period_no <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid period number"
+            });
+        }
+
+        /* ================================
+        DATE VALIDATION
+        ================================ */
 
         if (new Date(valid_from) > new Date(valid_to)) {
             return res.status(400).json({
@@ -60,16 +95,93 @@ export const createTimetable = async (req, res) => {
             });
         }
 
+        /* ================================
+        TIME VALIDATION
+        ================================ */
+
         if (start_time >= end_time) {
             return res.status(400).json({
                 success: false,
                 message: "Start time must be before end time"
             });
         }
-        /* SECTION CONFLICT */
 
-        const sectionConflict = await pool.query(
-            `SELECT id FROM timetable
+        /* ================================
+        BEGIN DATABASE TRANSACTION
+        ================================ */
+
+        await client.query("BEGIN");
+
+        /* ================================
+        CHECK SECTION EXISTS
+        ================================ */
+
+        const sectionCheck = await client.query(
+            "SELECT 1 FROM sections WHERE id=$1",
+            [section_id]
+        );
+
+        if (sectionCheck.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Section not found"
+            });
+        }
+
+        /* ================================
+        CHECK SUBJECT EXISTS
+        ================================ */
+
+        const subjectCheck = await client.query(
+            "SELECT 1 FROM subjects WHERE id=$1",
+            [subject_id]
+        );
+
+        if (subjectCheck.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Subject not found"
+            });
+        }
+
+        /* ================================
+        CHECK TEACHER EXISTS
+        ================================ */
+
+        const teacherCheck = await client.query(
+            "SELECT 1 FROM teachers WHERE id=$1",
+            [teacher_id]
+        );
+
+        if (teacherCheck.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Teacher not found"
+            });
+        }
+
+        /* ================================
+        CHECK CLASSROOM EXISTS
+        ================================ */
+
+        const roomCheck = await client.query(
+            "SELECT 1 FROM classrooms WHERE id=$1",
+            [classroom_id]
+        );
+
+        if (roomCheck.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Classroom not found"
+            });
+        }
+
+        /* ================================
+        SECTION CONFLICT CHECK
+        ================================ */
+
+        const sectionConflict = await client.query(
+            `SELECT 1 FROM timetable
              WHERE section_id=$1
              AND semester=$2
              AND academic_year=$3
@@ -79,52 +191,64 @@ export const createTimetable = async (req, res) => {
         );
 
         if (sectionConflict.rowCount > 0) {
+            await client.query("ROLLBACK");
             return res.status(409).json({
                 success: false,
                 message: "Section already has class in this period"
             });
         }
 
+        /* ================================
+        TEACHER TIME CONFLICT
+        ================================ */
 
-        /* TEACHER CONFLICT */
-
-        const teacherConflict = await pool.query(
-            `SELECT id FROM timetable
+        const teacherConflict = await client.query(
+            `SELECT 1 FROM timetable
              WHERE teacher_id=$1
-             AND day_of_week=$2
-             AND start_time < $3
-             AND end_time > $4`,
-            [teacher_id, day_of_week, end_time, start_time]
+             AND semester=$2
+             AND academic_year=$3
+             AND day_of_week=$4
+             AND start_time < $5
+             AND end_time > $6`,
+            [teacher_id, semester, academic_year, day_of_week, end_time, start_time]
         );
 
         if (teacherConflict.rowCount > 0) {
+            await client.query("ROLLBACK");
             return res.status(409).json({
                 success: false,
                 message: "Teacher already assigned in this time"
             });
         }
 
+        /* ================================
+        CLASSROOM CONFLICT
+        ================================ */
 
-        /* ROOM CONFLICT */
-
-        const roomConflict = await pool.query(
-            `SELECT id FROM timetable
+        const roomConflict = await client.query(
+            `SELECT 1 FROM timetable
              WHERE classroom_id=$1
-             AND day_of_week=$2
-             AND start_time < $3
-             AND end_time > $4`,
-            [classroom_id, day_of_week, end_time, start_time]
+             AND semester=$2
+             AND academic_year=$3
+             AND day_of_week=$4
+             AND start_time < $5
+             AND end_time > $6`,
+            [classroom_id, semester, academic_year, day_of_week, end_time, start_time]
         );
 
         if (roomConflict.rowCount > 0) {
+            await client.query("ROLLBACK");
             return res.status(409).json({
                 success: false,
                 message: "Classroom already occupied"
             });
         }
 
+        /* ================================
+        INSERT TIMETABLE
+        ================================ */
 
-        const result = await pool.query(
+        const result = await client.query(
             `INSERT INTO timetable
             (section_id, subject_id, teacher_id, classroom_id,
              day_of_week, period_no, start_time, end_time,
@@ -147,13 +271,17 @@ export const createTimetable = async (req, res) => {
             ]
         );
 
+        await client.query("COMMIT");
+
         res.status(201).json({
             success: true,
-            message: "Timetable created",
+            message: "Timetable created successfully",
             timetable: result.rows[0]
         });
 
     } catch (error) {
+
+        await client.query("ROLLBACK");
 
         console.error(error);
 
@@ -161,6 +289,10 @@ export const createTimetable = async (req, res) => {
             success: false,
             message: error.message
         });
+
+    } finally {
+
+        client.release();
 
     }
 
@@ -234,18 +366,28 @@ export const getTeacherTimetable = async (req, res) => {
             "SELECT id FROM teachers WHERE user_id=$1",
             [req.user.id]
         );
-
+        if (teacher.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Teacher not found"
+            })
+        }
         const teacher_id = teacher.rows[0].id;
 
         const result = await pool.query(
             `SELECT
-            sub.name AS subject,
+            t.id,
             s.sec_name AS section,
+            sub.name AS subject,
             c.room_number AS classroom,
             t.day_of_week,
             t.period_no,
             t.start_time,
-            t.end_time
+            t.end_time,
+            t.semester,
+            t.academic_year,
+            t.valid_from,
+            t.valid_to
             FROM timetable t
             JOIN subjects sub ON t.subject_id=sub.id
             JOIN sections s ON t.section_id=s.id
@@ -287,18 +429,28 @@ export const getStudentTimetable = async (req, res) => {
             "SELECT section_id FROM students WHERE user_id=$1",
             [req.user.id]
         );
-
+        if (student.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Student not found"
+            })
+        }
         const section_id = student.rows[0].section_id;
 
         const result = await pool.query(
             `SELECT
+            t.id,
             sub.name AS subject,
             u.name AS teacher,
             c.room_number AS classroom,
             t.day_of_week,
             t.period_no,
             t.start_time,
-            t.end_time
+            t.end_time,
+            t.semester,
+            t.academic_year,
+            t.valid_from,
+            t.valid_to
             FROM timetable t
             JOIN subjects sub ON t.subject_id=sub.id
             JOIN teachers te ON t.teacher_id=te.id

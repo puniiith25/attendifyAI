@@ -5,51 +5,10 @@ export const T_AppContext = createContext();
 
 const T_AppContextProvider = ({ children }) => {
 
-    const [sections, setSections] = useState([]);
-    const [subjects, setSubjects] = useState([]);
     const [timetable, setTimetable] = useState([]);
 
     const backendUrl = "http://localhost:8000/api/v1";
 
-
-    const getSections = async () => {
-
-        try {
-
-            const res = await axios.get(
-                `${backendUrl}/sections/get-secs`,
-                { withCredentials: true }
-            );
-
-            if (res.data.success) {
-                setSections(res.data.sections);
-            }
-
-        } catch (error) {
-            console.log(error);
-        }
-
-    };
-
-
-    const getSubjects = async () => {
-
-        try {
-
-            const res = await axios.get(
-                `${backendUrl}/subjects/get-subjects`,
-                { withCredentials: true }
-            );
-
-            if (res.data.success) {
-                setSubjects(res.data.subjects);
-            }
-
-        } catch (error) {
-            console.log(error);
-        }
-
-    };
 
 
 
@@ -58,7 +17,7 @@ const T_AppContextProvider = ({ children }) => {
         try {
 
             const res = await axios.get(
-                `${backendUrl}/timetable/get-timetables`,
+                `${backendUrl}/timetable/teacher-timetable`,
                 { withCredentials: true }
             );
 
@@ -76,8 +35,6 @@ const T_AppContextProvider = ({ children }) => {
 
     useEffect(() => {
 
-        getSections();
-        getSubjects();
         getTimetable();
 
     }, []);
@@ -85,12 +42,8 @@ const T_AppContextProvider = ({ children }) => {
 
     const value = {
 
-        sections,
-        subjects,
         timetable,
 
-        getSections,
-        getSubjects,
         getTimetable
 
     };
