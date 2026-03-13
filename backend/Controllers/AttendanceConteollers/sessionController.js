@@ -224,3 +224,35 @@ export const closeAttendanceSession = async (req, res) => {
 
     }
 };
+
+
+export const getSessionStudents = async (req, res) => {
+    try {
+
+        const { session_id } = req.params
+
+        const session = await pool.query(
+            `SELECT section_id
+       FROM attendance_sessions
+       WHERE id=$1`,
+            [session_id]
+        )
+
+        const section_id = session.rows[0].section_id
+
+        const students = await pool.query(
+            `SELECT id,name,photo_url
+       FROM students
+       WHERE section_id=$1`,
+            [section_id]
+        )
+
+        res.json({
+            success: true,
+            students: students.rows
+        })
+
+    } catch (err) {
+        res.status(500).json({ success: false })
+    }
+}
