@@ -1,23 +1,26 @@
 import { useRef, useState, useEffect } from "react"
+import { sendFrameToAI } from "../Components/attendanceService"
 
-export default function AttendanceCamera({ onDetect }) {
+export default function AttendanceCamera({ sessionId, onDetect }) {
 
     const videoRef = useRef(null)
     const canvasRef = useRef(null)
 
-    const [cameraOn, setCameraOn] = useState(false)
     const [stream, setStream] = useState(null)
+    const [cameraOn, setCameraOn] = useState(false)
+    const [detecting, setDetecting] = useState(false)
+    const [processing, setProcessing] = useState(false)
 
-    /* ======================
+    /* =========================
        START CAMERA
-    ====================== */
+    ========================= */
 
     const startCamera = async () => {
+
         try {
 
             const mediaStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: "user" },
-                audio: false
+                video: true
             })
 
             setStream(mediaStream)
@@ -28,164 +31,187 @@ export default function AttendanceCamera({ onDetect }) {
         }
     }
 
-    /* ======================
-       ATTACH STREAM TO VIDEO
-    ====================== */
+    /* =========================
+       STOP CAMERA
+    ========================= */
+
+    const stopCamera = () => {
+
+        if (stream) {
+
+            stream.getTracks().forEach(track => track.stop())
+
+        }
+
+        setCameraOn(false)
+        setDetecting(false)
+
+        if (videoRef.current) {
+            videoRef.current.srcObject = null
+        }
+
+    }
+
+    /* =========================
+       ATTACH STREAM
+    ========================= */
 
     useEffect(() => {
 
-        if (cameraOn && videoRef.current && stream) {
+        if (cameraOn && videoRef.current) {
 
-            const video = videoRef.current
-
-            video.srcObject = stream
-
-            video.onloadedmetadata = () => {
-                video.play()
-            }
+            videoRef.current.srcObject = stream
 
         }
 
     }, [cameraOn, stream])
 
+    /* =========================
+       START DETECTION
+    ========================= */
 
-    /* ======================
-       STOP CAMERA
-    ====================== */
+    const startDetection = () => {
 
-    const stopCamera = () => {
-
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop())
+        if (!cameraOn) {
+            alert("Start camera first")
+            return
         }
 
-        setCameraOn(false)
-        setStream(null)
-
+        setDetecting(true)
     }
 
-
-    /* ======================
+    /* =========================
        CAPTURE FRAME
-    ====================== */
+    ========================= */
 
-    const captureFrame = () => {
+    const captureFrame = async () => {
 
-        const video = videoRef.current
-        const canvas = canvasRef.current
+        if (processing) return
 
-        if (!video || !canvas) return
+        setProcessing(true)
 
-        const ctx = canvas.getContext("2d")
+        try {
 
-        canvas.width = video.videoWidth
-        canvas.height = video.videoHeight
+            const video = videoRef.current
+            const canvas = canvasRef.current
 
-        ctx.drawImage(video, 0, 0)
+            if (!video || !canvas) return
 
-        const image = canvas.toDataURL("image/jpeg")
+            const ctx = canvas.getContext("2d")
 
-        sendFrame(image)
+            canvas.width = video.videoWidth
+            canvas.height = video.videoHeight
 
-    }
+            ctx.drawImage(video, 0, 0)
 
+            const image = canvas.toDataURL("image/jpeg")
 
-    /* ======================
-       SEND FRAME (TEMP)
-    ====================== */
+            const blob = await fetch(image).then(r => r.blob())
 
-    const sendFrame = (image) => {
+            const res = await sendFrameToAI(sessionId, blob)
 
-        console.log("Frame captured")
+            if (res.success) {
 
-        if (onDetect) {
+                res.detected.forEach(student => {
 
-            const fakeStudent = {
-                id: 1,
-                name: "Rahul Sharma",
-                face: image
+                    onDetect({
+                        id: student.student_id,
+                        crop: student.crop,
+                        confidence: student.confidence
+                    })
+
+                })
+
             }
 
-            onDetect(fakeStudent)
+        } catch (error) {
+
+            console.error("Frame capture error:", error)
+
         }
 
+        setProcessing(false)
     }
 
-
-    /* ======================
-       AUTO CAPTURE
-    ====================== */
+    /* =========================
+       AUTO DETECT LOOP
+    ========================= */
 
     useEffect(() => {
 
-        if (!cameraOn) return
+        if (!detecting) return
 
         const interval = setInterval(() => {
+
             captureFrame()
-        }, 3000)
+
+        }, 4000)
 
         return () => clearInterval(interval)
 
-    }, [cameraOn])
+    }, [detecting])
 
+    /* =========================
+       CLEANUP ON UNMOUNT
+    ========================= */
+
+    useEffect(() => {
+
+        return () => {
+            stopCamera()
+        }
+
+    }, [])
+
+    /* =========================
+       UI
+    ========================= */
 
     return (
 
-        <div className="space-y-4">
+        <div>
 
-            {/* CAMERA VIEW */}
+            <video
+                ref={videoRef}
+                autoPlay
+                muted
+                className="w-full h-[450px] bg-black rounded"
+            />
 
-            <div className="bg-black rounded overflow-hidden">
+            <canvas ref={canvasRef} className="hidden" />
 
-                {cameraOn ? (
+            {!cameraOn && (
 
-                    <video
-                        ref={videoRef}
-                        autoPlay
-                        muted
-                        playsInline
-                        className="w-full h-[500px] object-cover"
-                    />
+                <button
+                    onClick={startCamera}
+                    className="bg-green-600 text-white px-4 py-2 rounded mt-4"
+                >
+                    Start Camera
+                </button>
 
-                ) : (
+            )}
 
-                    <div className="h-64 flex items-center justify-center text-gray-400">
-                        Camera Off
-                    </div>
+            {cameraOn && !detecting && (
 
-                )}
+                <button
+                    onClick={startDetection}
+                    className="bg-blue-600 text-white px-4 py-2 rounded mt-4 ml-3"
+                >
+                    Start Detection
+                </button>
 
-            </div>
+            )}
 
-            <canvas ref={canvasRef} className="hidden"></canvas>
+            {detecting && (
 
-            {/* BUTTONS */}
+                <button
+                    onClick={stopCamera}
+                    className="bg-red-600 text-white px-4 py-2 rounded mt-4 ml-3"
+                >
+                    Stop Camera
+                </button>
 
-            <div className="flex gap-3">
-
-                {!cameraOn && (
-
-                    <button
-                        onClick={startCamera}
-                        className="bg-green-600 text-white px-4 py-2 rounded"
-                    >
-                        Start Face Attendance
-                    </button>
-
-                )}
-
-                {cameraOn && (
-
-                    <button
-                        onClick={stopCamera}
-                        className="bg-red-600 text-white px-4 py-2 rounded"
-                    >
-                        Stop Session
-                    </button>
-
-                )}
-
-            </div>
+            )}
 
         </div>
     )

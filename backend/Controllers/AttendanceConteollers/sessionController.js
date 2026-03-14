@@ -58,16 +58,14 @@ export const startAttendanceSession = async (req, res) => {
             new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
         );
 
-        const day = indiaTime.toLocaleDateString("en-US", {
-            weekday: "long"
-        });
+        const dayNumber = indiaTime.getDay(); // 0 = Sunday, 6 = Saturday
 
         const time = indiaTime.toLocaleTimeString("en-GB", {
             hour12: false
         });
 
         console.log("Teacher:", teacher_id);
-        console.log("Day:", day);
+        console.log("Day Number:", dayNumber);
         console.log("Current Time:", time);
 
         /* ==============================
@@ -78,17 +76,17 @@ export const startAttendanceSession = async (req, res) => {
             `SELECT *
              FROM timetable
              WHERE teacher_id=$1
-             AND LOWER(day)=LOWER($2)
+             AND day_of_week=$2
              AND start_time <= $3::time
              AND end_time >= $3::time`,
-            [teacher_id, day, time]
+            [teacher_id, dayNumber, time]
         );
 
         if (timetable.rowCount === 0) {
             return res.status(404).json({
                 success: false,
                 message: "No class scheduled right now",
-                day,
+                dayNumber,
                 time
             });
         }
@@ -176,6 +174,8 @@ export const startAttendanceSession = async (req, res) => {
     }
 
 };
+
+
 /* =========================================
 CLOSE ATTENDANCE SESSION
 ========================================= */
@@ -195,9 +195,9 @@ export const closeAttendanceSession = async (req, res) => {
 
         const result = await pool.query(
             `UPDATE attendance_sessions
-       SET session_status='closed'
-       WHERE id=$1
-       RETURNING id`,
+             SET session_status='closed'
+             WHERE id=$1
+             RETURNING id`,
             [id]
         );
 
@@ -223,36 +223,90 @@ export const closeAttendanceSession = async (req, res) => {
         });
 
     }
+
 };
 
 
+/* =========================================
+GET SESSION STUDENTS
+========================================= */
+
 export const getSessionStudents = async (req, res) => {
+
     try {
 
-        const { session_id } = req.params
+        const { session_id } = req.params;
 
         const session = await pool.query(
             `SELECT section_id
-       FROM attendance_sessions
-       WHERE id=$1`,
+             FROM attendance_sessions
+             WHERE id=$1`,
             [session_id]
-        )
+        );
 
-        const section_id = session.rows[0].section_id
+        if (session.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Session not found"
+            });
+        }
+
+        const section_id = session.rows[0].section_id;
 
         const students = await pool.query(
-            `SELECT id,name,photo_url
-       FROM students
-       WHERE section_id=$1`,
+            `SELECT 
+                s.id,
+                u.name,
+                s.image_url
+             FROM students s
+             JOIN users u ON s.user_id = u.id
+             WHERE s.section_id=$1`,
             [section_id]
-        )
+        );
 
         res.json({
             success: true,
             students: students.rows
+        });
+
+    } catch (err) {
+
+        console.error("Get session students error:", err);
+
+        res.status(500).json({
+            success: false
+        });
+
+    }
+
+};
+
+export const submitAttendance = async (req, res) => {
+
+    try {
+
+        const { session_id } = req.body
+
+        await pool.query(
+            `UPDATE attendance_sessions
+         SET session_status='closed'
+         WHERE id=$1`,
+            [session_id])
+
+        res.json({
+            success: true,
+            message: "Attendance submitted"
         })
 
     } catch (err) {
-        res.status(500).json({ success: false })
+
+        console.error(err)
+
+        res.status(500).json({
+            success: false
+        })
+
     }
+
 }
+

@@ -5,7 +5,9 @@ import { verifyToken } from "../Midddlewares/verifyToken.js";
 
 import {
     closeAttendanceSession,
-    startAttendanceSession
+    getSessionStudents,
+    startAttendanceSession,
+    submitAttendance
 } from "../Controllers/AttendanceConteollers/sessionController.js";
 
 import {
@@ -14,7 +16,6 @@ import {
 
 import {
     getSessionDetails,
-    getSessionSummary
 } from "../Controllers/AttendanceConteollers/summaryController.js";
 
 import {
@@ -23,7 +24,7 @@ import {
 
 import {
     processFrame
-} from "../Controllers/aiController.js";
+} from "../Controllers/AttendanceConteollers/aiController.js";
 
 const attendanceRouter = express.Router();
 
@@ -88,16 +89,20 @@ attendanceRouter.post(
 /* ==============================
    SESSION SUMMARY
 ============================== */
-
-attendanceRouter.get(
-    "/session/:id/summary",
-    verifyToken,
-    getSessionSummary
-);
 attendanceRouter.get(
     "/session/:id/details",
     verifyToken,
     getSessionDetails
 );
+attendanceRouter.get(
+    "/session/:session_id/students",
+    verifyToken,
+    getSessionStudents
 
+);
+attendanceRouter.post(
+    "/session/submit",
+    verifyToken,
+    submitAttendance
+);
 export default attendanceRouter;

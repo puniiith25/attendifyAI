@@ -2,48 +2,57 @@ export default function LiveDetectedStudents({ detected }) {
 
     return (
 
-        <div className="bg-white shadow rounded p-3 h-full">
+        <div className="bg-white p-4 rounded shadow h-[450px] overflow-y-auto">
 
-            <h2 className="font-semibold mb-3">
-                Live Attendance
+            <h2 className="font-semibold text-lg mb-4">
+                Live Detected Students
             </h2>
 
             {detected.length === 0 && (
                 <p className="text-gray-400 text-sm">
-                    Waiting for detections...
+                    No students detected yet
                 </p>
             )}
 
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
 
-                {detected.map(student => (
+                {detected.map(student => {
 
-                    <div
-                        key={student.id}
-                        className="flex items-center gap-3 border-b pb-2"
-                    >
+                    const border =
+                        student.confidence >= 0.60
+                            ? "border-green-500"
+                            : "border-red-500"
 
-                        <img
-                            src={student.face}
-                            alt="face"
-                            className="w-10 h-10 rounded object-cover"
-                        />
+                    return (
 
-                        <div>
+                        <div
+                            key={student.id}
+                            className={`flex items-center gap-3 p-2 rounded border-2 ${border}`}
+                        >
 
-                            <p className="text-sm font-medium">
-                                {student.name}
-                            </p>
+                            <img
+                                src={`data:image/jpeg;base64,${student.crop}`}
+                                alt="face"
+                                className="w-12 h-12 rounded object-cover"
+                            />
 
-                            <p className="text-xs text-green-600">
-                                Present
-                            </p>
+                            <div>
+
+                                <p className="text-sm font-medium">
+                                    ID: {student.id}
+                                </p>
+
+                                <p className="text-xs text-gray-500">
+                                    {(student.confidence * 100).toFixed(1)}%
+                                </p>
+
+                            </div>
 
                         </div>
 
-                    </div>
+                    )
 
-                ))}
+                })}
 
             </div>
 

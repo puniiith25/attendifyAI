@@ -88,12 +88,15 @@ export const markManualAttendance = async (req, res) => {
 
         await pool.query(
             `INSERT INTO attendance_records
-             (session_id, student_id, status, method, marked_by)
-             VALUES ($1,$2,$3,'manual','teacher')
-             ON CONFLICT (session_id, student_id)
-             DO UPDATE SET status=$3`,
+(session_id,student_id,status,method,marked_by)
+VALUES ($1,$2,$3,'manual','teacher')
+ON CONFLICT(session_id,student_id)
+DO UPDATE SET
+status=$3,
+method='manual',
+marked_by='teacher'`,
             [session_id, student_id, status]
-        );
+        )
 
         res.json({
             success: true,

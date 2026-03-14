@@ -1,159 +1,81 @@
-import { useState } from "react"
-import { startAttendanceSession } from "../Components/attendanceService"
-import defaultAvatar from "../assets/images/default-avatar-profile.jpg"
+import { useState } from "react";
+import {
+    startAttendanceSession,
+    getSessionStudents,
+    getSessionDetails
+} from "./attendanceService";
+
 export default function useAttendanceSession() {
 
-    const sessions = [
+    const [students, setStudents] = useState([]);
+    const [sessionId, setSessionId] = useState(null);
 
-        {
-            id: 1,
-            section: "CSE-A",
-            subject: "Artificial Intelligence",
-            teacher: "Dr. Sharma",
-            day: "Monday",
-            period_no: 2,
-            start_time: "10:00",
-            end_time: "11:00"
-        },
-
-        {
-            id: 2,
-            section: "CSE-B",
-            subject: "Machine Learning",
-            teacher: "Dr. Patel",
-            day: "Monday",
-            period_no: 3,
-            start_time: "11:00",
-            end_time: "12:00"
-        },
-
-        {
-            id: 3,
-            section: "CSE-C",
-            subject: "Data Science",
-            teacher: "Dr. Reddy",
-            day: "Tuesday",
-            period_no: 1,
-            start_time: "09:00",
-            end_time: "10:00"
-        },
-
-        {
-            id: 4,
-            section: "CSE-A",
-            subject: "Operating Systems",
-            teacher: "Dr. Kumar",
-            day: "Wednesday",
-            period_no: 4,
-            start_time: "12:00",
-            end_time: "13:00"
-        },
-
-        {
-            id: 5,
-            section: "CSE-B",
-            subject: "Computer Networks",
-            teacher: "Dr. Singh",
-            day: "Thursday",
-            period_no: 5,
-            start_time: "14:00",
-            end_time: "15:00"
-        },
-
-        {
-            id: 6,
-            section: "CSE-C",
-            subject: "Database Systems",
-            teacher: "Dr. Verma",
-            day: "Friday",
-            period_no: 6,
-            start_time: "15:00",
-            end_time: "16:00"
-        },
-
-        {
-            id: 7,
-            section: "CSE-A",
-            subject: "Cloud Computing",
-            teacher: "Dr. Iyer",
-            day: "Saturday",
-            period_no: 7,
-            start_time: "16:00",
-            end_time: "17:00"
-        }
-
-    ]
-
-    const [students, setStudents] = useState([
-        {
-            id: 1,
-            name: "Rahul Sharma",
-            photo: defaultAvatar,
-            session_photo: null,
-            status: "present"
-        },
-
-        {
-            id: 2,
-            name: "Priya Patel",
-            photo: defaultAvatar,
-            session_photo: null,
-            status: "absent"
-        },
-
-        {
-            id: 3,
-            name: "Amit Kumar",
-            photo: defaultAvatar,
-            session_photo: defaultAvatar,
-            status: "present"
-        },
-
-        {
-            id: 4,
-            name: "Sneha Reddy",
-            photo: defaultAvatar,
-            session_photo: null,
-            status: "present"
-        },
-
-        {
-            id: 5,
-            name: "Vikram Singh",
-            photo: defaultAvatar,
-            session_photo: null,
-            status: "absent"
-        }
-    ])
+    /* START SESSION */
 
     const startSession = async (method) => {
 
-        const data = await startAttendanceSession(method)
+        const data = await startAttendanceSession(method);
 
-        console.log("Session Started:", data)
+        if (!data.success) return data;
 
-        return data
-    }
+        const id = data.session.id;
 
-    const updateStudent = (id, value) => {
+        setSessionId(id);
+
+        const studentData = await getSessionDetails(id);
+
+        const formatted = (studentData.students || []).map(s => ({
+            id: s.id,
+            name: s.name,
+            photo: s.student_photo,
+            session_photo: s.capture_image,
+            confidence: s.confidence,
+            status: s.status || "absent",
+            method: s.method
+        }));
+
+        setStudents(formatted);
+
+        return data;
+    };
+
+    /* UPDATE STUDENT */
+
+    const updateStudent = (id, status, manual = true) => {
+
         setStudents(prev =>
             prev.map(s =>
-                s.id === id ? { ...s, status: value } : s
+                s.id === id
+                    ? {
+                        ...s,
+                        status,
+                        method: manual ? "manual" : s.method
+                    }
+                    : s
             )
         )
+
     }
+
+    /* MARK ALL PRESENT */
 
     const markAllPresent = () => {
+
         setStudents(prev =>
-            prev.map(s => ({ ...s, status: "present" }))
-        )
-    }
+            prev.map(s => ({
+                ...s,
+                status: "present",
+                method: "manual"
+            }))
+        );
+
+    };
 
     return {
-        sessions,
         students,
+        sessionId,
         startSession,
         updateStudent,
         markAllPresent
-    }
+    };
 }

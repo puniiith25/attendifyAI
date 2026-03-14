@@ -27,7 +27,9 @@ const T_TimetablePage = () => {
                 // match weekday
                 if (d.getDay() === t.day_of_week) {
 
-                    const dateStr = d.toISOString().split("T")[0]
+                    const dateStr = d.toLocaleDateString("en-CA", {
+                        timeZone: "Asia/Kolkata"
+                    })
 
                     allEvents.push({
 

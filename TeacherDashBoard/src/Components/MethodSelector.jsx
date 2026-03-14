@@ -1,7 +1,7 @@
 export default function MethodSelector({ session, onSelect }) {
 
     if (!session) return null
-
+    
     return (
 
         <div className="space-y-6">

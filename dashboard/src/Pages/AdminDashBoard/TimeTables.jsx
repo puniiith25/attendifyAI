@@ -12,10 +12,10 @@ const TimeTables = ({ setshowAddTimeTable }) => {
 
     const [section, setSection] = useState("")
 
-
     /* =========================
        Convert timetable to events
     ========================= */
+
     const events = useMemo(() => {
 
         if (!section) return []
@@ -26,23 +26,23 @@ const TimeTables = ({ setshowAddTimeTable }) => {
 
         const allEvents = []
 
-        filtered.forEach(t => {
+        filtered.forEach((t) => {
 
             const start = new Date(t.valid_from)
 
-            // If valid_to is null → show only next 90 days
             const end = t.valid_to
                 ? new Date(t.valid_to)
                 : new Date(new Date().setDate(new Date().getDate() + 90))
 
-            // Convert DB weekday (1-6) → JS weekday
             const targetDay = t.day_of_week
 
             for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
 
                 if (d.getDay() === targetDay) {
 
-                    const dateStr = d.toISOString().split("T")[0]
+                    const dateStr = d.toLocaleDateString("en-CA", {
+                        timeZone: "Asia/Kolkata"
+                    })
 
                     allEvents.push({
 

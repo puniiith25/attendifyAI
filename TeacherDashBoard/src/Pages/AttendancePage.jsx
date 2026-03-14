@@ -1,4 +1,6 @@
-import { useState } from "react"
+import { useState, useContext } from "react"
+import { T_AppContext } from "../Context/T_AppContex"
+
 import SessionList from "../Components/SessionList"
 import MethodSelector from "../Components/MethodSelector"
 import StudentTable from "../Components/StudentTable"
@@ -7,11 +9,18 @@ import QRScanner from "../Components/QRScanner"
 import LiveDetectedStudents from "../Components/LiveDetectedStudents"
 import useAttendanceSession from "../Components/useAttendanceSession"
 
+import {
+    submitAttendance,
+    closeAttendanceSession
+} from "../Components/attendanceService"
+
 export default function AttendancePage() {
 
+    const { timetable } = useContext(T_AppContext)
+
     const {
-        sessions,
         students,
+        sessionId,
         startSession,
         updateStudent,
         markAllPresent
@@ -23,6 +32,10 @@ export default function AttendancePage() {
 
     const [detected, setDetected] = useState([])
 
+    /* =========================
+       HANDLE FACE DETECTION
+    ========================= */
+
     const handleDetection = (student) => {
 
         setDetected(prev => {
@@ -31,25 +44,76 @@ export default function AttendancePage() {
 
             if (exists) return prev
 
-            return [...prev, student]
+            return [
+                ...prev,
+                {
+                    id: student.id,
+                    crop: student.crop,
+                    confidence: student.confidence
+                }
+            ]
 
         })
 
-        updateStudent(student.id, "present")
+        updateStudent(student.id, "present", false)
+
     }
 
+    /* =========================
+       SESSION SELECT
+    ========================= */
+
     const handleSessionSelect = (session) => {
+
         setSelectedSession(session)
         setStep("method")
+
     }
+
+    /* =========================
+       METHOD SELECT
+    ========================= */
 
     const handleMethodSelect = async (m) => {
 
         setMethod(m)
 
-        await startSession(m)
+        const data = await startSession(m)
 
-        setStep("attendance")
+        if (data.success) {
+            setStep("attendance")
+        }
+
+    }
+
+    /* =========================
+       SUBMIT ATTENDANCE
+    ========================= */
+
+    const handleSubmitAttendance = async () => {
+
+        try {
+
+            const res = await submitAttendance(sessionId)
+
+            if (res.success) {
+
+                alert("Attendance submitted")
+
+                setDetected([])
+                setSelectedSession(null)
+                setMethod(null)
+
+                setStep("sessions")
+
+            }
+
+        } catch (error) {
+
+            console.error(error)
+
+        }
+
     }
 
     return (
@@ -60,25 +124,35 @@ export default function AttendancePage() {
                 Attendance Management
             </h1>
 
-            {/* SESSION LIST */}
+            {/* =========================
+               SESSION LIST
+            ========================= */}
 
             {step === "sessions" && (
+
                 <SessionList
-                    sessions={sessions}
+                    sessions={timetable}
                     onSelect={handleSessionSelect}
                 />
+
             )}
 
-            {/* METHOD SELECT */}
+            {/* =========================
+               METHOD SELECT
+            ========================= */}
 
             {step === "method" && (
+
                 <MethodSelector
                     session={selectedSession}
                     onSelect={handleMethodSelect}
                 />
+
             )}
 
-            {/* ATTENDANCE SCREEN */}
+            {/* =========================
+               ATTENDANCE SCREEN
+            ========================= */}
 
             {step === "attendance" && (
 
@@ -88,39 +162,40 @@ export default function AttendancePage() {
                         {selectedSession.subject} - {selectedSession.section}
                     </h2>
 
-                    {/* CAMERA + LIVE PANEL */}
+                    {/* CAMERA + LIVE DETECTION */}
 
                     <div className="grid grid-cols-2 gap-4 mb-6">
-
-                        {/* LEFT → CAMERA */}
 
                         <div>
 
                             {method === "face" && (
+
                                 <AttendanceCamera
+                                    key={sessionId}
+                                    sessionId={sessionId}
                                     onDetect={handleDetection}
                                 />
+
                             )}
 
-                            {method === "qr" && <QRScanner />}
+                            {method === "qr" && (
+
+                                <QRScanner />
+
+                            )}
 
                         </div>
-
-
-                        {/* RIGHT → LIVE DETECTIONS */}
 
                         <LiveDetectedStudents detected={detected} />
 
                     </div>
 
-
-                    {/* STUDENT LIST */}
+                    {/* STUDENT TABLE */}
 
                     <StudentTable
                         students={students}
                         onUpdate={updateStudent}
                     />
-
 
                     {/* ACTION BUTTONS */}
 
@@ -133,7 +208,10 @@ export default function AttendancePage() {
                             Mark All Present
                         </button>
 
-                        <button className="bg-blue-600 text-white px-6 py-2 rounded">
+                        <button
+                            onClick={handleSubmitAttendance}
+                            className="bg-blue-600 text-white px-6 py-2 rounded"
+                        >
                             Submit Attendance
                         </button>
 
@@ -146,4 +224,5 @@ export default function AttendancePage() {
         </div>
 
     )
+
 }

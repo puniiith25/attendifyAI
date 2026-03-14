@@ -1,128 +1,86 @@
-export default function StudentTable({ students, onUpdate }) {
+export default function StudentTable({ students = [], onUpdate }) {
 
     return (
 
-        <div className="overflow-x-auto">
+        <div className="bg-white rounded shadow mt-6">
 
-            <table className="w-full border rounded-lg">
+            <div className="grid grid-cols-4 px-6 py-3 text-sm font-semibold border-b">
+                <p>#</p>
+                <p>Student</p>
+                <p>Status</p>
+                <p>Action</p>
+            </div>
 
-                {/* ================= HEADER ================= */}
+            {students.map((student, index) => {
 
-                <thead className="bg-gray-100">
+                const statusColor =
+                    student.status === "present"
+                        ? "text-green-600"
+                        : "text-red-600"
 
-                    <tr>
+                return (
 
-                        <th className="p-3 text-left">S.No</th>
-                        <th className="p-3 text-left">Student Photo</th>
-                        <th className="p-3 text-left">Session Capture</th>
-                        <th className="p-3 text-left">Name</th>
-                        <th className="p-3 text-center">Attendance</th>
+                    <div
+                        key={student.id}
+                        className="grid grid-cols-4 px-6 py-3 border-b items-center"
+                    >
 
-                    </tr>
+                        <p>{index + 1}</p>
 
-                </thead>
+                        <div className="flex items-center gap-3">
 
-                {/* ================= BODY ================= */}
+                            <img
+                                src={student.photo || "/avatar.png"}
+                                className="w-10 h-10 rounded-full"
+                            />
 
-                <tbody>
+                            <div>
 
-                    {students.map((student, index) => {
-
-                        const rowColor =
-                            student.status === "present"
-                                ? "bg-green-50"
-                                : "bg-red-50";
-
-                        return (
-
-                            <tr
-                                key={student.id}
-                                className={`${rowColor} border-t`}
-                            >
-
-                                {/* Serial Number */}
-                                <td className="p-3 font-medium">
-                                    {index + 1}
-                                </td>
-
-                                {/* Student Photo */}
-                                <td className="p-3">
-
-                                    <img
-                                        src={student.photo}
-                                        alt="student"
-                                        className="w-10 h-10 rounded-full object-cover"
-                                    />
-
-                                </td>
-
-                                {/* Session Capture */}
-                                <td className="p-3">
-
-                                    {student.session_photo ? (
-
-                                        <img
-                                            src={student.session_photo}
-                                            alt="session capture"
-                                            className="w-10 h-10 rounded object-cover"
-                                        />
-
-                                    ) : (
-
-                                        <span className="text-gray-400 text-sm">
-                                            No Capture
-                                        </span>
-
-                                    )}
-
-                                </td>
-
-                                {/* Name */}
-                                <td className="p-3 font-medium">
+                                <p className="font-medium">
                                     {student.name}
-                                </td>
+                                </p>
 
-                                {/* Attendance Buttons */}
-                                <td className="p-3 text-center">
+                                {student.session_photo && (
+                                    <img
+                                        src={student.session_photo}
+                                        className="w-8 h-8 mt-1 rounded"
+                                    />
+                                )}
 
-                                    <div className="flex justify-center gap-2">
+                            </div>
 
-                                        <button
-                                            onClick={() => onUpdate(student.id, "present")}
-                                            className={`px-3 py-1 rounded text-white ${student.status === "present"
-                                                    ? "bg-green-600"
-                                                    : "bg-gray-400"
-                                                }`}
-                                        >
-                                            ✓
-                                        </button>
+                        </div>
 
-                                        <button
-                                            onClick={() => onUpdate(student.id, "absent")}
-                                            className={`px-3 py-1 rounded text-white ${student.status === "absent"
-                                                    ? "bg-red-600"
-                                                    : "bg-gray-400"
-                                                }`}
-                                        >
-                                            ✕
-                                        </button>
+                        <p className={`font-medium ${statusColor}`}>
+                            {student.status}
+                        </p>
 
-                                    </div>
+                        <div className="flex gap-2">
 
-                                </td>
+                            <button
+                                onClick={() => onUpdate(student.id, "present")}
+                                className="px-3 py-1 bg-green-600 text-white rounded"
+                            >
+                                Present
+                            </button>
 
-                            </tr>
+                            <button
+                                onClick={() => onUpdate(student.id, "absent")}
+                                className="px-3 py-1 bg-red-600 text-white rounded"
+                            >
+                                Absent
+                            </button>
 
-                        );
+                        </div>
 
-                    })}
+                    </div>
 
-                </tbody>
+                )
 
-            </table>
+            })}
 
         </div>
 
-    );
+    )
 
 }
