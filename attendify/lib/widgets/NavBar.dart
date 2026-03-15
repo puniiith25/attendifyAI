@@ -2,7 +2,6 @@ import 'package:attendify/data/notifiiers.dart';
 import 'package:attendify/widgets/color_codes.dart';
 import 'package:flutter/material.dart';
 
-
 class NavbarWidget extends StatefulWidget {
   const NavbarWidget({super.key});
 
@@ -18,13 +17,13 @@ class _NavbarWidgetState extends State<NavbarWidget> {
       builder: (context, selectedPage, child) {
         return NavigationBarTheme(
           data: NavigationBarThemeData(
-            backgroundColor: AppColors.black,
+            backgroundColor: AppColors.primary,
 
             indicatorColor: Colors.transparent,
 
             iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((states) {
               if (states.contains(WidgetState.selected)) {
-                return IconThemeData(color: AppColors.darkRed, size: 26);
+                return IconThemeData(color: AppColors.white, size: 26);
               }
               return const IconThemeData(color: Colors.grey, size: 24);
             }),
@@ -34,7 +33,7 @@ class _NavbarWidgetState extends State<NavbarWidget> {
             ) {
               if (states.contains(WidgetState.selected)) {
                 return TextStyle(
-                  color: AppColors.darkRed,
+                  color: AppColors.white,
                   fontWeight: FontWeight.w600,
                 );
               }
@@ -55,14 +54,14 @@ class _NavbarWidgetState extends State<NavbarWidget> {
                 label: 'Home',
               ),
               NavigationDestination(
-                icon: Icon(Icons.menu_book_outlined),
-                selectedIcon: Icon(Icons.menu_book),
-                label: 'Learn',
+                icon: Icon(Icons.qr_code_scanner),
+                selectedIcon: Icon(Icons.qr_code_2_sharp),
+                label: 'QR Scan',
               ),
               NavigationDestination(
-                icon: Icon(Icons.work_outline),
-                selectedIcon: Icon(Icons.work),
-                label: 'Opportunity',
+                icon: Icon(Icons.calendar_month),
+                selectedIcon: Icon(Icons.calendar_month_rounded),
+                label: 'TimeTable',
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline),

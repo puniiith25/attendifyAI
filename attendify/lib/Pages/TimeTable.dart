@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 
-class Timetable extends StatefulWidget {
+import '../widgets/timetable_calendar.dart';
+import '../Services/timetable_service.dart';
+
+class Timetable extends StatelessWidget {
   const Timetable({super.key});
 
   @override
-  State<Timetable> createState() => _TimetableState();
-}
-
-class _TimetableState extends State<Timetable> {
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Text("Timetable"));
+    final timetable = TimetableService.getStudentTimetable();
+
+    return Scaffold(
+      appBar: AppBar(title: const Text("My Timetable")),
+
+      body: Padding(
+        padding: const EdgeInsets.all(12),
+
+        child: TimetableCalendar(timetable: timetable),
+      ),
+    );
   }
 }
