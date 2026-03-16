@@ -10,6 +10,6 @@ class QR_Scaner extends StatefulWidget {
 class _QR_ScanerState extends State<QR_Scaner> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(body: Text("QR_Scaner"));
+    return Scaffold(body: Center(child: Text("QR_Scaner")));
   }
 }
