@@ -1,3 +1,4 @@
+import 'package:attendify/Screens/Auth_Pages/Login_Page.dart';
 import 'package:attendify/widgets/widget_tree.dart';
 import 'package:flutter/material.dart';
 
@@ -15,7 +16,7 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
-      home: widgetTree(),
+      home: LoginScreen(),
     );
   }
 }

@@ -19,7 +19,7 @@ class _NavbarWidgetState extends State<NavbarWidget> {
           data: NavigationBarThemeData(
             backgroundColor: AppColors.primary,
 
-            indicatorColor: Colors.transparent,
+            indicatorColor: AppColors.primary,
 
             iconTheme: WidgetStateProperty.resolveWith<IconThemeData>((states) {
               if (states.contains(WidgetState.selected)) {

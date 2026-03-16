@@ -79,10 +79,31 @@ class _HomeState extends State<Home> {
             ),
 
             const SizedBox(height: 20),
-
+            Padding(
+              padding: const EdgeInsets.only(left: 25),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Attendance',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
             const AttendanceCard(),
 
             const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.only(left: 25),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Today's Classes",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
 
             /* CLASS LIST */
             Column(

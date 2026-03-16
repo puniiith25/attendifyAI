@@ -102,8 +102,14 @@ class Profile extends StatelessWidget {
                     child: Column(
                       children: [
                         const ListTile(
-                          leading: Icon(Icons.face),
-                          title: Text("Face Authentication"),
+                          leading: Icon(Icons.face, color: AppColors.primary),
+                          title: Text(
+                            "Face Authentication",
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
 
                         ListTile(
@@ -143,8 +149,17 @@ class Profile extends StatelessWidget {
                     child: Column(
                       children: [
                         const ListTile(
-                          leading: Icon(Icons.verified),
-                          title: Text("Face Authentication Status"),
+                          leading: Icon(
+                            Icons.verified,
+                            color: AppColors.primary,
+                          ),
+                          title: Text(
+                            "Face Authentication Status",
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
 
                         ListTile(
