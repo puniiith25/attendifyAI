@@ -1,5 +1,4 @@
 import 'package:attendify/Screens/Auth_Pages/Login_Page.dart';
-import 'package:attendify/widgets/widget_tree.dart';
 import 'package:flutter/material.dart';
 
 void main() {

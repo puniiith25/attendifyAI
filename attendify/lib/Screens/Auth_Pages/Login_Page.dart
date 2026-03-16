@@ -37,7 +37,7 @@ class LoginScreen extends StatelessWidget {
                 Align(
                   alignment: AlignmentGeometry.center,
                   child: const Text(
-                    "Attendify",
+                    "Attendify.ai",
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
                 ),

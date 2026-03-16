@@ -12,10 +12,11 @@ class Timetable extends StatelessWidget {
     final timetable = TimetableService.getStudentTimetable();
 
     return Scaffold(
+      backgroundColor: AppColors.white,
       appBar: AppBar(
         title: const Text(
-          "My Timetable",
-          style: TextStyle(color: AppColors.white),
+          "Timetable",
+          style: TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: AppColors.primary,
       ),
