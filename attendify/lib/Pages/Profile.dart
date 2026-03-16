@@ -13,7 +13,8 @@ class Profile extends StatelessWidget {
       "branch": "Computer Science",
       "semester": "4",
       "email": "punitha@example.com",
-      "photo": "https://toipguxmufufcqlrfdcr.supabase.co/storage/v1/object/public/Students-faces/student_6_1772956064881.jpg",
+      "photo":
+          "https://toipguxmufufcqlrfdcr.supabase.co/storage/v1/object/public/Students-faces/student_123_1773168892643.jpg",
       "faceRegistered": true,
       "lastUpdated": "12 Mar 2026",
       "confidence": "97%",
@@ -202,8 +203,11 @@ class Profile extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       onPressed: () {},
-                      icon: const Icon(Icons.logout),
-                      label: const Text("Logout"),
+                      icon: const Icon(Icons.logout, color: AppColors.white),
+                      label: const Text(
+                        "Logout",
+                        style: TextStyle(color: AppColors.white),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         padding: const EdgeInsets.all(16),

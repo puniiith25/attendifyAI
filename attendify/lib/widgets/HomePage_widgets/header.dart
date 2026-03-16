@@ -25,7 +25,7 @@ class HeaderSection extends StatelessWidget {
             "Attendify.ai",
             style: TextStyle(
               color: AppColors.white,
-              fontSize: 22,
+              fontSize: 25,
               fontWeight: FontWeight.bold,
             ),
           ),
