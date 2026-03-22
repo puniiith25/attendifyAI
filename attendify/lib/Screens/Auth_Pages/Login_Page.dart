@@ -8,6 +8,7 @@ class LoginScreen extends StatelessWidget {
 
   static const Color primary = Color(0xFF172554);
 // login
+// page
   @override
   Widget build(BuildContext context) {
     return Scaffold(
