@@ -10,4 +10,3 @@ export const pool = new Pool({
 pool.connect()
     .then(() => console.log("Database Connected Successfully"))
     .catch(err => console.error("DB Error:", err.message));
-
