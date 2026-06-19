@@ -73,4 +73,4 @@ export const authorizeRole = (...roles) => {
 
         next();
     };
-};2
+};

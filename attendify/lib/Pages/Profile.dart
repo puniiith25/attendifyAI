@@ -1,8 +1,23 @@
+import 'package:attendify/Models/user_model.dart';
+import 'package:attendify/Services/profile_Services.dart';
 import 'package:attendify/widgets/color_codes.dart';
 import 'package:flutter/material.dart';
 
-class Profile extends StatelessWidget {
+class Profile extends StatefulWidget {
   const Profile({super.key});
+
+  @override
+  State<Profile> createState() => _ProfileState();
+}
+
+class _ProfileState extends State<Profile> {
+  late Future<UserModel> profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    profileFuture = ProfileServices().getProfile();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,16 +36,28 @@ class Profile extends StatelessWidget {
     };
 
     const primaryBlue = Color(0xFF172554);
+    return FutureBuilder<UserModel>(
+      future: profileFuture,
 
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            /* =========================
-               PROFILE HEADER
-            ========================= */
-            Container(
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Scaffold(body: Center(child: Text(snapshot.error.toString())));
+        }
+
+        final user = snapshot.data!;
+
+        return Scaffold(
+          backgroundColor: Colors.grey[100],
+          appBar: PreferredSize(
+            preferredSize: const Size.fromHeight(280),
+
+            child: Container(
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 60, 20, 30),
               decoration: const BoxDecoration(
@@ -47,14 +74,20 @@ class Profile extends StatelessWidget {
                     backgroundColor: Colors.white,
                     child: CircleAvatar(
                       radius: 52,
-                      backgroundImage: NetworkImage(student["photo"]),
+                      backgroundImage: user.imageUrl != null
+                          ? NetworkImage(user.imageUrl!)
+                          : null,
+
+                      child: user.imageUrl == null
+                          ? const Icon(Icons.person, size: 50)
+                          : null,
                     ),
                   ),
 
                   const SizedBox(height: 14),
 
                   Text(
-                    student["name"],
+                    user.name,
                     style: const TextStyle(
                       fontSize: 22,
                       color: Colors.white,
@@ -70,183 +103,198 @@ class Profile extends StatelessWidget {
                     runSpacing: 10,
                     alignment: WrapAlignment.center,
                     children: [
-                      _infoChip(Icons.badge, "ID ${student["studentId"]}"),
+                      _infoChip(Icons.badge, "ID ${user.rollNumber}"),
                       _infoChip(
                         Icons.school,
-                        "${student["course"]} ${student["branch"]}",
+                        "${student["course"]} ${user.branch}",
                       ),
                       _infoChip(
                         Icons.calendar_today,
-                        "Semester ${student["semester"]}",
+                        "Semester ${user.semester}",
                       ),
-                      _infoChip(Icons.email, student["email"]),
+                      _infoChip(Icons.email, user.email),
                     ],
                   ),
                 ],
               ),
             ),
+          ),
+          body: SingleChildScrollView(
+            child: Column(
+              children: [
+                /* =========================
+               PROFILE HEADER
+            ========================= */
+                const SizedBox(height: 20),
 
-            const SizedBox(height: 20),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  /* =========================
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    children: [
+                      /* =========================
                      FACE AUTHENTICATION
                   ========================= */
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      children: [
-                        const ListTile(
-                          leading: Icon(Icons.face, color: AppColors.primary),
-                          title: Text(
-                            "Face Authentication",
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-
-                        ListTile(
-                          title: const Text("Face Registered"),
-                          trailing: Text(
-                            student["faceRegistered"] ? "Yes" : "No",
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: primaryBlue,
+                        child: Column(
+                          children: [
+                            const ListTile(
+                              leading: Icon(
+                                Icons.face,
+                                color: AppColors.primary,
+                              ),
+                              title: Text(
+                                "Face Authentication",
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                            onPressed: () {},
-                            child: const Text(
-                              "Register / Update Face",
-                              style: TextStyle(color: AppColors.white),
+
+                            ListTile(
+                              title: const Text("Face Registered"),
+                              trailing: Text(
+                                student["faceRegistered"] ? "Yes" : "No",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
-                          ),
+
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: primaryBlue,
+                                ),
+                                onPressed: () {},
+                                child: const Text(
+                                  "Register / Update Face",
+                                  style: TextStyle(color: AppColors.white),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
 
-                  const SizedBox(height: 20),
+                      const SizedBox(height: 20),
 
-                  /* =========================
+                      /* =========================
                      FACE STATUS
                   ========================= */
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      children: [
-                        const ListTile(
-                          leading: Icon(
-                            Icons.verified,
-                            color: AppColors.primary,
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: [
+                            const ListTile(
+                              leading: Icon(
+                                Icons.verified,
+                                color: AppColors.primary,
+                              ),
+                              title: Text(
+                                "Face Authentication Status",
+                                style: TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+
+                            ListTile(
+                              title: const Text("Registered"),
+                              trailing: Text(
+                                student["faceRegistered"] ? "Yes" : "No",
+                              ),
+                            ),
+
+                            ListTile(
+                              title: const Text("Last Updated"),
+                              trailing: Text(student["lastUpdated"]),
+                            ),
+
+                            ListTile(
+                              title: const Text("Confidence Score"),
+                              trailing: Text(student["confidence"]),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      /* =========================
+                     SETTINGS
+                  ========================= */
+                      Card(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          children: const [
+                            ListTile(
+                              leading: Icon(Icons.lock),
+                              title: Text("Change Password"),
+                            ),
+                            ListTile(
+                              leading: Icon(Icons.notifications),
+                              title: Text("Notifications"),
+                            ),
+                            ListTile(
+                              leading: Icon(Icons.privacy_tip),
+                              title: Text("Privacy"),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      /* =========================
+                     LOGOUT BUTTON
+                  ========================= */
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(
+                            Icons.logout,
+                            color: AppColors.white,
                           ),
-                          title: Text(
-                            "Face Authentication Status",
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
+                          label: const Text(
+                            "Logout",
+                            style: TextStyle(color: AppColors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            padding: const EdgeInsets.all(16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
                           ),
                         ),
-
-                        ListTile(
-                          title: const Text("Registered"),
-                          trailing: Text(
-                            student["faceRegistered"] ? "Yes" : "No",
-                          ),
-                        ),
-
-                        ListTile(
-                          title: const Text("Last Updated"),
-                          trailing: Text(student["lastUpdated"]),
-                        ),
-
-                        ListTile(
-                          title: const Text("Confidence Score"),
-                          trailing: Text(student["confidence"]),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  /* =========================
-                     SETTINGS
-                  ========================= */
-                  Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      children: const [
-                        ListTile(
-                          leading: Icon(Icons.lock),
-                          title: Text("Change Password"),
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.notifications),
-                          title: Text("Notifications"),
-                        ),
-                        ListTile(
-                          leading: Icon(Icons.privacy_tip),
-                          title: Text("Privacy"),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  /* =========================
-                     LOGOUT BUTTON
-                  ========================= */
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.logout, color: AppColors.white),
-                      label: const Text(
-                        "Logout",
-                        style: TextStyle(color: AppColors.white),
                       ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        padding: const EdgeInsets.all(16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                  ),
 
-                  const SizedBox(height: 30),
-                ],
-              ),
+                      const SizedBox(height: 30),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
   /* =========================
      STUDENT INFO CHIP
   ========================= */
-
   Widget _infoChip(IconData icon, String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),

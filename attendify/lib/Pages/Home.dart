@@ -49,12 +49,14 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade200,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(180),
 
+        child: const HeaderSection(),
+      ),
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const HeaderSection(),
-
             const SizedBox(height: 60),
 
             const Row(

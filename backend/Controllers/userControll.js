@@ -132,6 +132,7 @@ export const userLogin = async (req, res) => {
 
         res.json({
             success: true,
+            token,
             message: "Login successful",
             user: {
                 id: dbUser.id,
@@ -401,6 +402,7 @@ export const getCurrentUser = async (req, res) => {
             success: true,
             user: result.rows[0]
         });
+        
 
     } catch (error) {
 

@@ -62,7 +62,7 @@ class ClassCard extends StatelessWidget {
                 color: Colors.grey.shade200,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.bar_chart, color: Colors.blue),
+              child: const Icon(Icons.book, color: Colors.blue),
             ),
 
             const SizedBox(width: 14),
