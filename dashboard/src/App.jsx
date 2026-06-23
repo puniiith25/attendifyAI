@@ -20,7 +20,6 @@ import ClassRoom from "./Pages/AdminDashBoard/ClassRoom";
 import AddSubjects from "./Components/AddSubjects";
 import AddClassRoom from "./Components/AddClassRoom";
 const App = () => {
-  const [showAddStudent, setshowAddStudent] = useState(false);
   const [showAddteacher, setshowAddTeacher] = useState(false);
   const [showAddSection, setshowAddSection] = useState(false);
   const [showAddSubject, setshowAddSubject] = useState(false);
@@ -31,7 +30,7 @@ const App = () => {
     <div >
 
 
-      {showAddStudent ? <AddStudents setshowAddStudent={setshowAddStudent} /> : <></>}
+
       {showAddteacher ? <AddTeacher setshowAddTeacher={setshowAddTeacher} /> : <></>}
       {showAddSection ? <AddSections setshowAddSection={setshowAddSection} /> : <></>}
       {showAddTimeTable ? <AddTimeTable setshowAddTimeTable={setshowAddTimeTable} /> : <></>}
@@ -45,7 +44,7 @@ const App = () => {
           </ProtectedRoute>
         } >
           <Route index element={<DashBoard />} />
-          <Route path="students" element={<Students setshowAddStudent={setshowAddStudent} />} />
+          <Route path="students" element={<Students />} />
 
 
           <Route path="teachers" element={<Teachers setshowAddTeacher={setshowAddTeacher} />} />

@@ -3,16 +3,13 @@ import { useContext, useState } from 'react'
 import { AppContext } from '../../Context/AppContext'
 import avatar from '../../assets/images/default-avatar-profile.jpg'
 import AddStudents from '../../Components/AddStudents'
-import UpdateStudents from '../../Components/UpdateDetails/UpdateStudents'
 
 
 
 const Students = () => {
 
     const [showAddStudent, setshowAddStudent] = useState(false);
-    const [showUpdateStudent, setshowUpdateStudent] = useState(false);
     const { students } = useContext(AppContext);
-    const [selectedStudentId, setSelectedStudentId] = useState(null);
     return (
         <div className=' border-2 mt-3 rounded p-6 border-gray-300'>
             <h1 className='font-semibold text-2xl'>Student Management </h1>
@@ -86,22 +83,11 @@ const Students = () => {
                         <p className="text-xs">{item.email}</p>
 
                         <div className="flex justify-center gap-4">
-                            <Edit className="h-4 w-4 cursor-pointer text-blue-600 hover:scale-110" onClick={() => { setSelectedStudentId(item.student_id); setshowUpdateStudent(true); }} />
-
+                            <Edit className="h-4 w-4 cursor-pointer text-blue-600 hover:scale-110" />
                             <Trash2 className="h-4 w-4 cursor-pointer text-red-500 hover:scale-110" />
                         </div>
                     </div>
                 ))}
-                {showUpdateStudent && (
-
-                    <UpdateStudents
-                        id={selectedStudentId}
-                        setshowUpdateStudent={setshowUpdateStudent}
-
-
-                    />
-
-                )}
 
             </div>
         </div>

@@ -6,6 +6,7 @@ export const AppContext = createContext();
 const AppContextProvider = ({ children }) => {
 
     const [students, setStudents] = useState([]);
+    const [studentByid, setStudentByid] = useState(null);
     const [teachers, setTeachers] = useState([]);
     const [sections, setSections] = useState([]);
     const [subjects, setSubjects] = useState([]);
@@ -16,7 +17,7 @@ const AppContextProvider = ({ children }) => {
 
 
     /* =============================
-       GET STUDENTS
+    GET STUDENTS
     ============================= */
 
     const getStudents = async () => {
@@ -37,10 +38,27 @@ const AppContextProvider = ({ children }) => {
         }
 
     };
+    const getStudentByid = async (id) => {
+        setStudentByid(null)
+        try {
 
+            const res = await axios.get(
+                `${backendUrl}/students/get-student/${id}`,
+                { withCredentials: true }
+            );
+
+            if (res.data.success) {
+                setStudentByid(res.data.student);
+            }
+
+        } catch (error) {
+            console.log(error);
+        }
+
+    };
 
     /* =============================
-       GET TEACHERS
+    GET TEACHERS
     ============================= */
 
     const getTeachers = async () => {
@@ -64,7 +82,7 @@ const AppContextProvider = ({ children }) => {
 
 
     /* =============================
-       GET SECTIONS
+    GET SECTIONS
     ============================= */
 
     const getSections = async () => {
@@ -88,7 +106,7 @@ const AppContextProvider = ({ children }) => {
 
 
     /* =============================
-       GET SUBJECTS
+    GET SUBJECTS
     ============================= */
 
     const getSubjects = async () => {
@@ -112,7 +130,7 @@ const AppContextProvider = ({ children }) => {
 
 
     /* =============================
-       GET CLASSROOMS
+    GET CLASSROOMS
     ============================= */
 
     const getClassRooms = async () => {
@@ -136,7 +154,7 @@ const AppContextProvider = ({ children }) => {
 
 
     /* =============================
-       GET TIMETABLE
+    GET TIMETABLE
     ============================= */
 
     const getTimetable = async () => {
@@ -160,7 +178,7 @@ const AppContextProvider = ({ children }) => {
 
 
     /* =============================
-       LOAD DATA
+    LOAD DATA
     ============================= */
 
     useEffect(() => {
@@ -171,6 +189,7 @@ const AppContextProvider = ({ children }) => {
         getSubjects();
         getClassRooms();
         getTimetable();
+
 
     }, []);
 
@@ -183,13 +202,16 @@ const AppContextProvider = ({ children }) => {
         subjects,
         classrooms,
         timetable,
+        studentByid,
 
         getStudents,
         getTeachers,
         getSections,
         getSubjects,
         getClassRooms,
-        getTimetable
+        getTimetable,
+        getStudentByid
+
 
     };
 

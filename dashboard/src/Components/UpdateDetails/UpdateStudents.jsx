@@ -1,18 +1,43 @@
 import { X } from "lucide-react"
 import React, { useContext, useState } from "react"
 import axios from "axios"
-import { AppContext } from "../Context/AppContext"
+import { AppContext } from "../../Context/AppContext"
+import { useEffect } from "react"
 
-const AddStudents = ({ setshowAddStudent }) => {
-    console.log("PROP", setshowAddStudent)
-    const { sections } = useContext(AppContext)
+const UpdateStudents = ({ setshowUpdateStudent, id }) => {
+    const { sections, getStudentByid, studentByid } = useContext(AppContext)
 
     const [loading, setLoading] = useState(false)
 
+    useEffect(() => {
+        if (id) {
+            getStudentByid(id);
+        }
+    }, [id]);
+    useEffect(() => {
+
+        if (studentByid) {
+
+            setForm({
+                name: studentByid.name || "",
+                email: studentByid.email || "",
+
+                roll_number: studentByid.roll_number || "",
+                phone: studentByid.phone || "",
+                admission_year: studentByid.admission_year || "",
+                branch: studentByid.branch || "",
+                semester: studentByid.semester || 0,
+                section_id: studentByid.section_id || 0
+            });
+
+            setPreview(studentByid.image_url);
+
+        }
+
+    }, [studentByid]);
     const [form, setForm] = useState({
         name: "",
         email: "",
-        password: "",
         roll_number: "",
         phone: "",
         admission_year: "",
@@ -65,7 +90,6 @@ const AddStudents = ({ setshowAddStudent }) => {
         setForm({
             name: "",
             email: "",
-            password: "",
             roll_number: "",
             phone: "",
             admission_year: "",
@@ -79,7 +103,7 @@ const AddStudents = ({ setshowAddStudent }) => {
 
     const handleSubmit = async () => {
 
-        if (!form.name || !form.email || !form.password || !form.roll_number || !form.section_id) {
+        if (!form.name || !form.email  || !form.roll_number || !form.section_id) {
             alert("Please fill all required fields")
             return
         }
@@ -96,20 +120,21 @@ const AddStudents = ({ setshowAddStudent }) => {
 
             if (image) formData.append("image", image)
 
-            const res = await axios.post(
-                "http://localhost:8000/api/v1/students/create-student",
+            const res = await axios.put(
+                `http://localhost:8000/api/v1/students/update-student/${id}`,
                 formData,
                 {
                     withCredentials: true,
-                    headers: { "Content-Type": "multipart/form-data" }
+                    headers: {
+                        "Content-Type": "multipart/form-data"
+                    }
                 }
-            )
-
+            );
             if (res.data.success) {
 
                 resetForm()
 
-                setshowAddStudent(false)
+                setshowUpdateStudent(false)
 
             }
 
@@ -117,7 +142,7 @@ const AddStudents = ({ setshowAddStudent }) => {
 
             console.error(err)
 
-            alert(err.response?.data?.message || "Failed to create student")
+            alert(err.response?.data?.message || "Failed to Update student")
 
         } finally {
 
@@ -135,12 +160,12 @@ const AddStudents = ({ setshowAddStudent }) => {
 
                 <div className="flex justify-between">
                     <h1 className="font-semibold text-3xl text-blue-950">
-                        Add New Student
+                        Update Student
                     </h1>
 
                     <X
-                        onClick={() => setshowAddStudent(false)}
-                        className="cursor-pointer "
+                        onClick={() => setshowUpdateStudent(false)}
+                        className="cursor-pointer"
                     />
                 </div>
 
@@ -177,16 +202,7 @@ const AddStudents = ({ setshowAddStudent }) => {
                     />
                 </div>
 
-                <div className="mt-3">
-                    <label className="text-sm font-semibold">Password</label>
-                    <input
-                        name="password"
-                        type="password"
-                        value={form.password}
-                        onChange={handleChange}
-                        className="py-2 px-3 w-full rounded bg-gray-200"
-                    />
-                </div>
+               
 
                 <div className="mt-3">
                     <label className="text-sm font-semibold">Roll Number</label>
@@ -271,7 +287,7 @@ const AddStudents = ({ setshowAddStudent }) => {
 
                     <button
                         className="bg-gray-200 px-6 py-2 rounded"
-                        onClick={() => setshowAddStudent(false)}
+                        onClick={() => setshowUpdateStudent(false)}
                     >
                         Cancel
                     </button>
@@ -293,4 +309,4 @@ const AddStudents = ({ setshowAddStudent }) => {
     )
 }
 
-export default AddStudents
+export default UpdateStudents

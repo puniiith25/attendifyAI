@@ -250,7 +250,9 @@ export const getStudents = async (req, res) => {
                 s.phone,
                 s.admission_year,
                 s.image_url,
+                s.section_id,
                 sec.sec_name AS section,
+                
                 u.name,
                 u.email
             FROM students s
@@ -292,21 +294,22 @@ export const getStudentById = async (req, res) => {
         const { id } = req.params;
 
         const result = await pool.query(
-            `SELECT 
-                s.id,
-                s.roll_number,
-                s.branch,
-                s.semester,
-                s.phone,
-                s.admission_year,
-                s.image_url,
-                sec.sec_name AS section,
-                u.name,
-                u.email
-            FROM students s
-            JOIN users u ON s.user_id = u.id
-            JOIN sections sec ON s.section_id = sec.id
-            WHERE s.id=$1`,
+            `SELECT
+    s.id,
+    s.roll_number,
+    s.section_id,
+    s.branch,
+    s.semester,
+    s.phone,
+    s.admission_year,
+    s.image_url,
+    sec.sec_name AS section,
+    u.name,
+    u.email
+FROM students s
+JOIN users u ON s.user_id = u.id
+JOIN sections sec ON s.section_id = sec.id
+WHERE s.id=$1`,
             [id]
         );
 
@@ -430,12 +433,10 @@ export const deleteStudent = async (req, res) => {
 
     }
 };
-
-/* =========================================
-UPDATE STUDENT
-========================================= */
-
 export const updateStudent = async (req, res) => {
+
+    const client = await pool.connect();
+
     try {
 
         if (req.user.role !== "admin") {
@@ -448,6 +449,8 @@ export const updateStudent = async (req, res) => {
         const { id } = req.params;
 
         const {
+            name,
+            email,
             roll_number,
             section_id,
             branch,
@@ -456,16 +459,23 @@ export const updateStudent = async (req, res) => {
             admission_year
         } = req.body;
 
-        /* -------------------------
-        CHECK STUDENT
-        ------------------------- */
+        await client.query("BEGIN");
 
-        const studentResult = await pool.query(
-            "SELECT * FROM students WHERE id=$1",
+        /* ==========================
+           GET STUDENT
+        ========================== */
+
+        const studentResult = await client.query(
+            `SELECT *
+             FROM students
+             WHERE id = $1`,
             [id]
         );
 
         if (studentResult.rowCount === 0) {
+
+            await client.query("ROLLBACK");
+
             return res.status(404).json({
                 success: false,
                 message: "Student not found"
@@ -473,44 +483,116 @@ export const updateStudent = async (req, res) => {
         }
 
         const student = studentResult.rows[0];
+        const userId = student.user_id;
 
-        /* -------------------------
-        CHECK ROLL NUMBER DUPLICATE
-        ------------------------- */
+        /* ==========================
+           CHECK EMAIL DUPLICATE
+        ========================== */
+
+        if (email) {
+
+            const emailCheck = await client.query(
+                `SELECT id
+                 FROM users
+                 WHERE email = $1
+                 AND id <> $2`,
+                [email, userId]
+            );
+
+            if (emailCheck.rowCount > 0) {
+
+                await client.query("ROLLBACK");
+
+                return res.status(409).json({
+                    success: false,
+                    message: "Email already exists"
+                });
+            }
+        }
+
+        /* ==========================
+           CHECK SECTION
+        ========================== */
+
+        if (section_id) {
+
+            const sectionCheck = await client.query(
+                `SELECT id
+                 FROM sections
+                 WHERE id = $1`,
+                [section_id]
+            );
+
+            if (sectionCheck.rowCount === 0) {
+
+                await client.query("ROLLBACK");
+
+                return res.status(404).json({
+                    success: false,
+                    message: "Section not found"
+                });
+            }
+        }
+
+        /* ==========================
+           CHECK ROLL NUMBER
+        ========================== */
 
         if (roll_number) {
 
-            const duplicate = await pool.query(
-                "SELECT id FROM students WHERE roll_number=$1 AND id<>$2",
+            const duplicate = await client.query(
+                `SELECT id
+                 FROM students
+                 WHERE roll_number = $1
+                 AND id <> $2`,
                 [roll_number, id]
             );
 
             if (duplicate.rowCount > 0) {
+
+                await client.query("ROLLBACK");
+
                 return res.status(409).json({
                     success: false,
                     message: "Roll number already exists"
                 });
             }
-
         }
+
+        /* ==========================
+           UPDATE USER
+        ========================== */
+
+        await client.query(
+            `UPDATE users
+             SET
+                name = COALESCE($1, name),
+                email = COALESCE($2, email)
+             WHERE id = $3`,
+            [name, email, userId]
+        );
+
+        /* ==========================
+           IMAGE UPDATE
+        ========================== */
 
         let image_url = student.image_url;
 
-        /* -------------------------
-        IMAGE UPDATE
-        ------------------------- */
-
         if (req.file) {
 
-            const fileName = `student_${id}_${Date.now()}.jpg`;
+            const fileName = `student_${id}_${Date.now()}`;
 
             const { error } = await supabase.storage
                 .from("Students-faces")
                 .upload(fileName, req.file.buffer, {
-                    contentType: req.file.mimetype
+                    contentType: req.file.mimetype,
+                    upsert: true
                 });
 
             if (error) {
+
+                await client.query("ROLLBACK");
+
                 return res.status(500).json({
                     success: false,
                     message: "Image upload failed"
@@ -522,81 +604,108 @@ export const updateStudent = async (req, res) => {
                 .getPublicUrl(fileName);
 
             image_url = data.publicUrl;
-
-            /* -------------------------
-            REGENERATE FACE EMBEDDING
-            ------------------------- */
-
-            const aiResponse = await axios.post(
-                "http://127.0.0.1:9000/api/create-embedding",
-                { image_url }
-            );
-
-            const embedding = aiResponse.data.embedding;
-
-            if (embedding) {
-
-                const vector = `[${embedding.join(",")}]`;
-
-                await pool.query(
-                    `INSERT INTO student_faces
-                    (student_id, section_id, image_url, embedding)
-                    VALUES ($1,$2,$3,$4)
-                    ON CONFLICT (student_id)
-                    DO UPDATE SET
-                        embedding=$4,
-                        image_url=$3`,
-                    [
-                        id,
-                        section_id || student.section_id,
-                        image_url,
-                        vector
-                    ]
-                );
-
-            }
-
         }
 
-        /* -------------------------
-        UPDATE STUDENT
-        ------------------------- */
+        /* ==========================
+           UPDATE STUDENT
+        ========================== */
 
-        const result = await pool.query(
+        const updatedStudent = await client.query(
             `UPDATE students
-             SET roll_number=$1,
-                 section_id=$2,
-                 branch=$3,
-                 semester=$4,
-                 phone=$5,
-                 admission_year=$6,
-                 image_url=$7
-             WHERE id=$8
+             SET
+                roll_number = $1,
+                section_id = $2,
+                branch = $3,
+                semester = $4,
+                phone = $5,
+                admission_year = $6,
+                image_url = $7
+             WHERE id = $8
              RETURNING *`,
             [
-                roll_number || student.roll_number,
-                section_id || student.section_id,
-                branch || student.branch,
-                semester || student.semester,
-                phone || student.phone,
-                admission_year || student.admission_year,
+                roll_number ?? student.roll_number,
+                section_id ?? student.section_id,
+                branch ?? student.branch,
+                semester ?? student.semester,
+                phone ?? student.phone,
+                admission_year ?? student.admission_year,
                 image_url,
                 id
             ]
         );
 
-        res.json({
+        /* ==========================
+           UPDATE FACE EMBEDDING
+        ========================== */
+
+        if (req.file && image_url) {
+
+            try {
+
+                const aiResponse = await axios.post(
+                    "http://127.0.0.1:9000/api/create-embedding",
+                    { image_url }
+                );
+
+                const embedding = aiResponse.data.embedding;
+
+                if (embedding) {
+
+                    const vector = `[${embedding.join(",")}]`;
+
+                    await client.query(
+                        `INSERT INTO student_faces
+                        (
+                            student_id,
+                            section_id,
+                            image_url,
+                            embedding
+                        )
+                        VALUES ($1,$2,$3,$4)
+                        ON CONFLICT (student_id)
+                        DO UPDATE SET
+                            section_id = EXCLUDED.section_id,
+                            image_url = EXCLUDED.image_url,
+                            embedding = EXCLUDED.embedding`,
+                        [
+                            id,
+                            section_id ?? student.section_id,
+                            image_url,
+                            vector
+                        ]
+                    );
+                }
+
+            } catch (embeddingError) {
+
+                console.log(
+                    "Embedding update failed:",
+                    embeddingError.message
+                );
+            }
+        }
+
+        await client.query("COMMIT");
+
+        return res.status(200).json({
             success: true,
             message: "Student updated successfully",
-            student: result.rows[0]
+            student: updatedStudent.rows[0]
         });
 
     } catch (error) {
 
-        res.status(500).json({
+        await client.query("ROLLBACK");
+
+        console.log(error);
+
+        return res.status(500).json({
             success: false,
             message: error.message
         });
 
+    } finally {
+
+        client.release();
     }
 };
