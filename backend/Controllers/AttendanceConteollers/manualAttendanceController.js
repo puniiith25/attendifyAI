@@ -48,12 +48,7 @@ export const markManualAttendance = async (req, res) => {
             });
         }
 
-        if (session.rows[0].session_status !== "open") {
-            return res.status(400).json({
-                success: false,
-                message: "Attendance session closed"
-            });
-        }
+
 
         const section_id = session.rows[0].section_id;
 

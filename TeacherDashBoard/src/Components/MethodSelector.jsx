@@ -71,13 +71,6 @@ export default function MethodSelector({ session, onSelect }) {
                     </button>
 
                     <button
-                        onClick={() => onSelect("qr")}
-                        className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded"
-                    >
-                        QR Attendance
-                    </button>
-
-                    <button
                         onClick={() => onSelect("manual")}
                         className="bg-gray-700 hover:bg-gray-800 text-white px-6 py-2 rounded"
                     >

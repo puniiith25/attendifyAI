@@ -4,11 +4,11 @@ const API = "http://localhost:8000/api/v1/attendance"
 
 /* START SESSION */
 
-export const startAttendanceSession = async (method) => {
+export const startAttendanceSession = async (payload) => {
 
     const res = await axios.post(
         `${API}/session/start`,
-        { method },
+        payload,
         { withCredentials: true }
     )
 
@@ -87,4 +87,25 @@ export const getSessionDetails = async (sessionId) => {
 
     return res.data;
 
+};
+
+export const getActiveSession = async () => {
+    const res = await axios.get(
+        `${API}/session/active`,
+        { withCredentials: true }
+    );
+    return res.data;
+};
+
+export const markManualAttendance = async (sessionId, studentId, status) => {
+    const res = await axios.post(
+        `${API}/manual`,
+        {
+            session_id: sessionId,
+            student_id: studentId,
+            status
+        },
+        { withCredentials: true }
+    );
+    return res.data;
 };

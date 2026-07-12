@@ -709,3 +709,73 @@ export const updateStudent = async (req, res) => {
         client.release();
     }
 };
+
+export const getStudentAttendanceStats = async (req, res) => {
+    try {
+        if (req.user.role !== "student") {
+            return res.status(403).json({
+                success: false,
+                message: "Access denied"
+            });
+        }
+
+        // Get student's section and ID
+        const studentRes = await pool.query(
+            "SELECT id, section_id FROM students WHERE user_id = $1",
+            [req.user.id]
+        );
+
+        if (studentRes.rowCount === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Student not found"
+            });
+        }
+
+        const student_id = studentRes.rows[0].id;
+        const section_id = studentRes.rows[0].section_id;
+
+        const statsQuery = await pool.query(
+            `SELECT 
+                sub.id AS subject_id,
+                sub.name AS subject_name,
+                sub.code AS subject_code,
+                COALESCE(conducted.total, 0) AS total_sessions,
+                COALESCE(attended.present, 0) AS present_sessions
+             FROM subjects sub
+             JOIN (
+                SELECT DISTINCT subject_id 
+                FROM timetable 
+                WHERE section_id = $1
+             ) section_subs ON sub.id = section_subs.subject_id
+             LEFT JOIN (
+                SELECT subject_id, COUNT(*)::int AS total
+                FROM attendance_sessions
+                WHERE section_id = $1
+                GROUP BY subject_id
+             ) conducted ON sub.id = conducted.subject_id
+             LEFT JOIN (
+                SELECT asess.subject_id, COUNT(DISTINCT ar.session_id)::int AS present
+                FROM attendance_records ar
+                JOIN attendance_sessions asess ON ar.session_id = asess.id
+                WHERE ar.student_id = $2
+                AND asess.section_id = $1
+                AND ar.status = 'present'
+                GROUP BY asess.subject_id
+             ) attended ON sub.id = attended.subject_id`,
+            [section_id, student_id]
+        );
+
+        res.json({
+            success: true,
+            stats: statsQuery.rows
+        });
+
+    } catch (error) {
+        console.error("getStudentAttendanceStats error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }
+};

@@ -2,7 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:attendify/widgets/color_codes.dart';
 
 class StudentCard extends StatelessWidget {
-  const StudentCard({super.key});
+  final String name;
+  final String rollNumber;
+  final String branch;
+  final int semester;
+  final String? imageUrl;
+
+  const StudentCard({
+    super.key,
+    required this.name,
+    required this.rollNumber,
+    required this.branch,
+    required this.semester,
+    this.imageUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,43 +27,50 @@ class StudentCard extends StatelessWidget {
         boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
 
-      child: const Row(
+      child: Row(
         children: [
-          SizedBox(width: 20),
+          const SizedBox(width: 20),
 
-          CircleAvatar(radius: 20, child: Icon(Icons.person)),
+          CircleAvatar(
+            radius: 20,
+            backgroundImage: imageUrl != null ? NetworkImage(imageUrl!) : null,
+            child: imageUrl == null ? const Icon(Icons.person) : null,
+          ),
 
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
 
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("PUNITHA KM", style: TextStyle(fontWeight: FontWeight.bold)),
               Text(
-                "2411021061279",
-                style: TextStyle(fontSize: 12, color: Colors.grey),
+                name.toUpperCase(),
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text(
+                rollNumber,
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
           ),
 
-          Spacer(),
+          const Spacer(),
 
           Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "BTECH CSE",
-                style: TextStyle(fontSize: 10, color: Colors.grey),
+                branch.toUpperCase(),
+                style: const TextStyle(fontSize: 10, color: Colors.grey, fontWeight: FontWeight.bold),
               ),
               Text(
-                "4TH SEM",
-                style: TextStyle(fontSize: 10, color: Colors.grey),
+                "${semester}TH SEM",
+                style: const TextStyle(fontSize: 10, color: Colors.grey),
               ),
             ],
           ),
 
-          SizedBox(width: 20),
+          const SizedBox(width: 20),
         ],
       ),
     );

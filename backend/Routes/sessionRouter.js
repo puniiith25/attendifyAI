@@ -7,7 +7,9 @@ import {
     closeAttendanceSession,
     getSessionStudents,
     startAttendanceSession,
-    submitAttendance
+    submitAttendance,
+    getActiveSession,
+    getSessionsHistory
 } from "../Controllers/AttendanceConteollers/sessionController.js";
 
 import {
@@ -47,6 +49,18 @@ attendanceRouter.post(
     "/session/start",
     verifyToken,
     startAttendanceSession
+);
+
+attendanceRouter.get(
+    "/session/active",
+    verifyToken,
+    getActiveSession
+);
+
+attendanceRouter.get(
+    "/session/history",
+    verifyToken,
+    getSessionsHistory
 );
 
 attendanceRouter.put(

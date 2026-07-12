@@ -1,9 +1,12 @@
 import 'package:attendify/widgets/HomePage_widgets/student_card.dart';
 import 'package:attendify/widgets/color_codes.dart';
 import 'package:flutter/material.dart';
+import 'package:attendify/Models/user_model.dart';
 
 class HeaderSection extends StatelessWidget {
-  const HeaderSection({super.key});
+  final UserModel student;
+
+  const HeaderSection({super.key, required this.student});
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +34,17 @@ class HeaderSection extends StatelessWidget {
           ),
         ),
 
-        const Positioned(
+        Positioned(
           bottom: -30,
           left: 30,
           right: 30,
-          child: StudentCard(),
+          child: StudentCard(
+            name: student.name,
+            rollNumber: student.rollNumber,
+            branch: student.branch,
+            semester: student.semester,
+            imageUrl: student.imageUrl,
+          ),
         ),
       ],
     );

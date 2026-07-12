@@ -2,6 +2,8 @@ import 'package:attendify/Models/user_model.dart';
 import 'package:attendify/Services/profile_Services.dart';
 import 'package:attendify/widgets/color_codes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:attendify/Screens/Auth_Pages/Login_Page.dart';
 
 class Profile extends StatefulWidget {
   const Profile({super.key});
@@ -261,7 +263,17 @@ class _ProfileState extends State<Profile> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () {},
+                          onPressed: () async {
+                            const storage = FlutterSecureStorage();
+                            await storage.delete(key: "token");
+                            if (context.mounted) {
+                              Navigator.pushAndRemoveUntil(
+                                context,
+                                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                (route) => false,
+                              );
+                            }
+                          },
                           icon: const Icon(
                             Icons.logout,
                             color: AppColors.white,

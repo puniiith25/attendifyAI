@@ -18,15 +18,13 @@ function SidebarPage() {
     const handleLogout = async () => {
         try {
             // call backend logout
-            await axios.post("http://localhost:8000/user/logout", {}, { withCredentials: true });
-
-            // optional: clear local storage (if you store role/data there)
-            localStorage.clear();
-
-            // redirect to login page
-            navigate("/login");
+            await axios.post("http://localhost:8000/api/v1/users/logout", {}, { withCredentials: true });
         } catch (error) {
-            console.error("Logout failed", error);
+            console.error("Logout backend call failed", error);
+        } finally {
+            // Always clear local state and redirect to login
+            localStorage.clear();
+            navigate("/login");
         }
     };
 
@@ -48,9 +46,12 @@ function SidebarPage() {
                 ))}
 
             </div>
-            <div className="mt-auto border-t-2 p-2  flex justify-center">
-                <button onClick={handleLogout} className="text-2xl" type="button cursor-pointer">Logout</button>
-                <LogOut className="m-2 cursor-pointer" />
+            <div 
+                onClick={handleLogout}
+                className="mt-auto border-t border-gray-600 p-2 flex justify-center items-center gap-2 cursor-pointer text-gray-400 hover:text-white transition-colors duration-150"
+            >
+                <button className="text-lg font-medium" type="button">Logout</button>
+                <LogOut className="w-5 h-5" />
             </div>
         </div>
     );

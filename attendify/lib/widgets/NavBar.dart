@@ -54,9 +54,9 @@ class _NavbarWidgetState extends State<NavbarWidget> {
                 label: 'Home',
               ),
               NavigationDestination(
-                icon: Icon(Icons.qr_code_scanner),
-                selectedIcon: Icon(Icons.qr_code_2_sharp),
-                label: 'QR Scan',
+                icon: Icon(Icons.bar_chart_outlined),
+                selectedIcon: Icon(Icons.bar_chart),
+                label: 'Attendance',
               ),
               NavigationDestination(
                 icon: Icon(Icons.calendar_month),

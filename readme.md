@@ -42,7 +42,7 @@ This project improves security by integrating:
 - JWT (authentication token)
 
 ### Database
-- SQLite / MySQL
+- PostgreSQL (Supabase)
 
 ### Frontend
 - React.js
@@ -104,17 +104,18 @@ This project improves security by integrating:
 - 🛡️ Multi-factor authentication
 - 🔑 Secure data storage
 
----
-
 ## 📊 Database Schema
 
-**Table: users_ai_ml**
+The database relies on PostgreSQL (hosted on Supabase). You can find the complete DDL structure in the [schema.sql](file:///Users/punith25/VS-CODE/attendifyAI/backend/Database/schema.sql) file.
 
-- `id` → Primary Key  
-- `name` → User Name  
-- `email` → Unique Email  
-- `password` → Hashed Password  
-- `face_encoding` → JSON (face vector)  
+### Key Tables:
+- **`users`**: General credentials and role definitions (`admin`, `teacher`, `student`).
+- **`students` / `teachers`**: Institutional profiles linked to user accounts.
+- **`sections`**: Academic batches/classes.
+- **`student_faces`**: Stores 512-dimension face vectors/embeddings.
+- **`subjects` / `timetable`**: Manages semester curriculum and schedule slots.
+- **`attendance_sessions`**: Tracks active period records.
+- **`attendance_records`**: Logs live attendance data, confidence levels, capture URLs, and methods.
 
 ---
 

@@ -17,7 +17,7 @@ class _TimetableCalendarState extends State<TimetableCalendar> {
 
   List<Timetable> _getEventsForDay(DateTime day) {
     return widget.timetable.where((t) {
-      bool correctDay = t.dayOfWeek == day.weekday;
+      bool correctDay = t.dayOfWeek == (day.weekday % 7);
 
       bool validDate =
           day.isAfter(t.validFrom.subtract(const Duration(days: 1))) &&

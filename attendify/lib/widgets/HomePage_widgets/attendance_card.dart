@@ -2,7 +2,14 @@ import 'package:attendify/widgets/color_codes.dart';
 import 'package:flutter/material.dart';
 
 class AttendanceCard extends StatelessWidget {
-  const AttendanceCard({super.key});
+  final double value;
+  final String percentageText;
+
+  const AttendanceCard({
+    super.key,
+    required this.value,
+    required this.percentageText,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +44,7 @@ class AttendanceCard extends StatelessWidget {
                 width: 70,
                 height: 70,
                 child: CircularProgressIndicator(
-                  value: 0.87, // 87%
+                  value: value,
                   strokeWidth: 6,
                   backgroundColor: Colors.grey.shade300,
                   valueColor: const AlwaysStoppedAnimation<Color>(
@@ -46,9 +53,9 @@ class AttendanceCard extends StatelessWidget {
                 ),
               ),
 
-              const Text(
-                "87%",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              Text(
+                percentageText,
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ],
           ),

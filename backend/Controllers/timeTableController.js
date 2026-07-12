@@ -377,6 +377,8 @@ export const getTeacherTimetable = async (req, res) => {
         const result = await pool.query(
             `SELECT
             t.id,
+            t.section_id,
+            t.subject_id,
             s.sec_name AS section,
             sub.name AS subject,
             c.room_number AS classroom,

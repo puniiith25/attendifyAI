@@ -24,6 +24,7 @@ const AddTimeTable = ({ setshowAddTimeTable }) => {
     const [validTo, setValidTo] = useState("")
 
     const days = [
+        { name: "Sunday", id: 0 },
         { name: "Monday", id: 1 },
         { name: "Tuesday", id: 2 },
         { name: "Wednesday", id: 3 },
