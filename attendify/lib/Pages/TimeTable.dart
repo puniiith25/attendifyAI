@@ -1,5 +1,6 @@
 import 'package:attendify/widgets/color_codes.dart';
 import 'package:flutter/material.dart';
+import 'package:attendify/data/notifiiers.dart';
 
 import '../widgets/timetable_calendar.dart';
 import '../Services/timetable_service.dart';
@@ -18,7 +19,24 @@ class _TimetablePageState extends State<TimetablePage> {
   @override
   void initState() {
     super.initState();
+    selectedPageNotifier.addListener(_onTabActive);
     timetableFuture = TimetableService().getStudentTimetable();
+  }
+
+  @override
+  void dispose() {
+    selectedPageNotifier.removeListener(_onTabActive);
+    super.dispose();
+  }
+
+  void _onTabActive() {
+    if (selectedPageNotifier.value == 2) {
+      if (mounted) {
+        setState(() {
+          timetableFuture = TimetableService().getStudentTimetable();
+        });
+      }
+    }
   }
 
   @override

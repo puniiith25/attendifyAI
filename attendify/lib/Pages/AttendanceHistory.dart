@@ -1,5 +1,6 @@
 import 'package:attendify/Services/attendance_service.dart';
 import 'package:flutter/material.dart';
+import 'package:attendify/data/notifiiers.dart';
 
 class AttendanceHistoryPage extends StatefulWidget {
   const AttendanceHistoryPage({super.key});
@@ -14,7 +15,24 @@ class _AttendanceHistoryPageState extends State<AttendanceHistoryPage> {
   @override
   void initState() {
     super.initState();
+    selectedPageNotifier.addListener(_onTabActive);
     statsFuture = AttendanceService().getAttendanceStats();
+  }
+
+  @override
+  void dispose() {
+    selectedPageNotifier.removeListener(_onTabActive);
+    super.dispose();
+  }
+
+  void _onTabActive() {
+    if (selectedPageNotifier.value == 1) {
+      if (mounted) {
+        setState(() {
+          statsFuture = AttendanceService().getAttendanceStats();
+        });
+      }
+    }
   }
 
   Color _getProgressColor(double percentage) {

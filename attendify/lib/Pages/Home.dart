@@ -25,7 +25,24 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
+    selectedPageNotifier.addListener(_onTabActive);
     _loadHomeData();
+  }
+
+  @override
+  void dispose() {
+    selectedPageNotifier.removeListener(_onTabActive);
+    super.dispose();
+  }
+
+  void _onTabActive() {
+    if (selectedPageNotifier.value == 0) {
+      if (mounted) {
+        setState(() {
+          _loadHomeData();
+        });
+      }
+    }
   }
 
   void _loadHomeData() {

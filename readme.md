@@ -1,17 +1,19 @@
-# 🔐 AI-Based Face Authentication System
+# 🔐 AttendifyAI: AI-Powered Attendance Tracking System
 
-A secure multi-factor authentication system that combines **password-based login** with **AI-powered face recognition** to enhance security and prevent unauthorized access.
+![AttendifyAI Banner](assets/thumbnail.png)
+
+An intelligent, multi-factor attendance tracking system that integrates **AI-powered face recognition**, **dynamic rotating QR codes**, and **real-time management dashboards** for students, teachers, and admins.
 
 ---
 
 ## 🚀 Features
 
-- 👤 User Registration with Face Data
-- 🔑 Password Authentication (bcrypt hashing)
-- 🤖 AI-based Face Recognition
-- 🔐 Multi-Factor Authentication (Password + Face)
-- 🎟️ JWT Token-based Session Management
-- 📡 REST API using FastAPI
+- 👤 **AI-Based Face Recognition**: Live classroom attendance tracking using OpenCV and InsightFace.
+- 📱 **Student Mobile App**: Flutter-based app for QR code scanning, timetable viewing, and biometric registration.
+- 👨‍🏫 **Teacher Dashboard**: React-based portal to schedule classes, run live face-scans, and manage student presence.
+- 🔑 **Multi-Factor Verification**: Supports credentials, dynamic QR code verification, and face biometric comparison.
+- ⚙️ **Admin Dashboard**: Central panel for institutional management, schedules, and database monitoring.
+- 💾 **Supabase Integration**: Secure cloud storage for biometric templates and face crops.
 - 💾 Secure Database Storage
 
 ---
@@ -119,12 +121,11 @@ The database relies on PostgreSQL (hosted on Supabase). You can find the complet
 
 ---
 
-## 📸 Output Screens
+## 📸 Project Interface Preview
 
-- Registration Page  
-- Login Page  
-- Face Verification Page  
-- Dashboard  
+Below is a consolidated preview of the AttendifyAI ecosystem, featuring the Student Mobile App, the Teacher Attendance Camera & live table, and the Admin Analytics Dashboard:
+
+![AttendifyAI Preview](assets/thumbnail.png)
 
 ---
 

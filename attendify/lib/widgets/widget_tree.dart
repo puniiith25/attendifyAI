@@ -6,7 +6,12 @@ import 'package:attendify/data/notifiiers.dart';
 import 'package:attendify/widgets/NavBar.dart';
 import 'package:flutter/material.dart';
 
-List<Widget> pages = [Home(), const AttendanceHistoryPage(), const TimetablePage(), Profile()];
+List<Widget> pages = [
+  Home(),
+  const AttendanceHistoryPage(),
+  const TimetablePage(),
+  Profile(),
+];
 
 class widgetTree extends StatelessWidget {
   const widgetTree({super.key});
