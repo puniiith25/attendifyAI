@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+psycopg2-binary
+numpy
+python-dotenv
+requests
+Pillow
+opencv-python
+insightface
+onnxruntime
+python-multipart
+pillow-heif
